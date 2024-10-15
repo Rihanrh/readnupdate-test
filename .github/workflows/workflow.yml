@@ -1,0 +1,29 @@
+name: Update File
+
+on:
+    workflow_dispatch:
+        inputs:
+            file-path:
+                description: "Path to the file to update"
+                required: true
+            file-content:
+                description: "New content for the file"
+                required: true
+            commit-message:
+                description: "Commit message for the update"
+                required: true
+
+jobs:
+    update-file:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v2
+
+            - name: Update file
+              uses: ./ # Uses the action in the root directory
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  file-path: ${{ github.event.inputs.file-path }}
+                  file-content: ${{ github.event.inputs.file-content }}
+                  commit-message: ${{ github.event.inputs.commit-message }}
