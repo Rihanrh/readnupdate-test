@@ -6,9 +6,6 @@ on:
             file-path:
                 description: "Path to the file to update"
                 required: true
-            file-content:
-                description: "New content for the file"
-                required: true
             commit-message:
                 description: "Commit message for the update"
                 required: true
@@ -28,5 +25,4 @@ jobs:
               with:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
                   file-path: ${{ github.event.inputs.file-path }}
-                  file-content: ${{ github.event.inputs.file-content }}
                   commit-message: ${{ github.event.inputs.commit-message }}
