@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { fullAssistantProcesser } from "./fullAssistantProcesser.js";
+import { fullAssistantProcesser } from "./utils/fullAssistantProcesser.js";
 
 async function run() {
     try {
