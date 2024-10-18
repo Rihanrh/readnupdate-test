@@ -1,14 +1,11 @@
-name: 'Update File Content'
-description: 'Update a file in the repository with new content'
+name: 'Assistant File Update'
+description: 'Update a file in the repository with content processed by an AI assistant'
 inputs:
   github-token:
-    description: 'GitHub token'
+    description: 'GitHub token for repository access'
     required: true
   file-path:
     description: 'Path to the file to update'
-    required: true
-  file-content:
-    description: 'New content for the file'
     required: true
   commit-message:
     description: 'Commit message for the update'
