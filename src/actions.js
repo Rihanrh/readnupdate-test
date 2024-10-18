@@ -1,6 +1,6 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
-const { fullAssistantProcesser } = require("./fullAssistantProcesser");
+const { fullAssistantProcesser } = require("./utils/fullAssistantProcesser");
 
 async function run() {
     try {
