@@ -1,6 +1,6 @@
-const core = require("@actions/core");
-const github = require("@actions/github");
-const { fullAssistantProcesser } = require("./fullAssistantProcesser.js");
+import * as core from "@actions/core";
+import * as github from "@actions/github";
+import { fullAssistantProcesser } from "./fullAssistantProcesser.js";
 
 async function run() {
     try {
@@ -12,9 +12,11 @@ async function run() {
 
         // Process with the assistant
         const fileId = await fullAssistantProcesser();
-        
+
         if (!fileId) {
-            throw new Error("No file ID was returned from the assistant processor");
+            throw new Error(
+                "No file ID was returned from the assistant processor"
+            );
         }
 
         const octokit = github.getOctokit(token);
@@ -28,7 +30,9 @@ async function run() {
             content: Buffer.from(fileId).toString("base64"),
         });
 
-        console.log(`File ${filePath} has been updated successfully with assistant results.`);
+        console.log(
+            `File ${filePath} has been updated successfully with assistant results.`
+        );
     } catch (error) {
         core.setFailed(error.message);
     }
