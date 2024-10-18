@@ -1,6 +1,11 @@
-import OpenAI from "openai";
-import { config } from "./config.js";
+const OpenAI = require("openai");
+const { config } = require("./config");
 
-export const openai = new OpenAI({
+/**
+ * Initialize OpenAI client with the API key from the config.
+ */
+const openai = new OpenAI({
     apiKey: config.openaiApiKey,
 });
+
+module.exports = { openai };

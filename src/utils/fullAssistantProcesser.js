@@ -1,13 +1,13 @@
-import { uploadFiles } from "./uploadFiles.js";
-import { createThread } from "./createThread.js";
-import { runAssistant } from "./runAssistant.js";
-import { giveResults } from "./giveResults.js";
-import { config } from "./config.js";
-//import { responseWriter } from "./responseWriter.js";
+const { uploadFiles } = require("./uploadFiles");
+const { createThread } = require("./createThread");
+const { runAssistant } = require("./runAssistant");
+const { giveResults } = require("./giveResults");
+const { config } = require("./config");
+//const { responseWriter } = require("./responseWriter");
 
-export async function fullAssistantProcesser() {
+async function fullAssistantProcesser() {
     try {
-        const fileIds = await uploadFiles(config.filesToUpload); 
+        const fileIds = await uploadFiles(config.filesToUpload);
         const thread = await createThread(fileIds);
         const run = await runAssistant(thread.id);
         console.log(run.status);
@@ -18,3 +18,4 @@ export async function fullAssistantProcesser() {
     }
 }
 
+module.exports = { fullAssistantProcesser };

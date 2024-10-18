@@ -1,7 +1,13 @@
-import { openai } from "./openaiClient.js";
-import fs from "fs";
+const { openai } = require("./openaiClient");
+const fs = require("fs");
 
-export async function uploadFiles(filePaths) {
+/**
+ * Uploads files to OpenAI and returns their IDs.
+ * 
+ * @param {Array<string>} filePaths - An array of file paths to upload.
+ * @returns {Promise<Array<string>>} An array of file IDs from the uploaded files.
+ */
+async function uploadFiles(filePaths) {
     const fileIds = [];
 
     for (const filePath of filePaths) {
@@ -19,3 +25,4 @@ export async function uploadFiles(filePaths) {
     return fileIds;
 }
 
+module.exports = { uploadFiles };

@@ -1,8 +1,16 @@
-import { openai } from "./openaiClient.js";
-import { config } from "./config.js";
+const { openai } = require("./openaiClient");
+const { config } = require("./config");
 
-export async function runAssistant(threadId) {
+/**
+ * Runs the assistant and polls for the result based on the thread ID.
+ * 
+ * @param {string} threadId - The ID of the thread to run the assistant.
+ * @returns {Promise<any>} The result of the assistant run.
+ */
+async function runAssistant(threadId) {
     return await openai.beta.threads.runs.createAndPoll(threadId, {
         assistant_id: config.assistantID,
     });
 }
+
+module.exports = { runAssistant };

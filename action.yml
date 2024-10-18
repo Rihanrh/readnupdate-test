@@ -12,4 +12,4 @@ inputs:
     required: true
 runs:
   using: 'node16'
-  main: 'dist/actions.js'
+  main: 'dist/index.js'

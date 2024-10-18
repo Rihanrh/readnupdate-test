@@ -1,4 +1,4 @@
-import { openai } from "./openaiClient.js";
+const { openai } = require("./openaiClient");
 
 /**
  * Explanation about the functions
@@ -12,7 +12,7 @@ import { openai } from "./openaiClient.js";
  * console.log(thread)
  * 
  */
-export async function createThread(fileIds) {
+async function createThread(fileIds) {
     const attachments = fileIds.map((fileId) => ({
         file_id: fileId,
         tools: [{ type: "code_interpreter" }],
@@ -30,3 +30,5 @@ export async function createThread(fileIds) {
 
     return thread;
 }
+
+module.exports = { createThread };

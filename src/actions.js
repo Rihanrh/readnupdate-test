@@ -1,6 +1,6 @@
-import * as core from "@actions/core";
-import * as github from "@actions/github";
-import { fullAssistantProcesser } from "./utils/fullAssistantProcesser.js";
+const core = require("@actions/core");
+const github = require("@actions/github");
+const { fullAssistantProcesser } = require("./fullAssistantProcesser");
 
 async function run() {
     try {
