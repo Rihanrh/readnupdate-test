@@ -7,18 +7,19 @@ const fs = require("fs");
  * @param {string} filePath - The path of the file to retrieve content from.
  */
 
-async function responseWriter(filePath) {
+async function retrieveContent(filePath) {
     // FIX LATER: How to define relative path with os/path lib
     const path = 'src/sample_files/corrected_code.py';
 
     const file = await openai.files.content(filePath);
-    const data = await file.text();
+    const newData = await file.text();
+    return newData;
     
-    fs.writeFileSync(
-        path, 
-        data,
-        { encoding: "utf8" }
-    );
+    // fs.writeFileSync(
+    //     path, 
+    //     newData,
+    //     { encoding: "utf8" }
+    // );
 }
 
-module.exports = { responseWriter };
+module.exports = { retrieveContent };

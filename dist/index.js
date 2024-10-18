@@ -36060,7 +36060,7 @@ const { createThread } = __nccwpck_require__(8531);
 const { runAssistant } = __nccwpck_require__(556);
 const { giveResults } = __nccwpck_require__(570);
 const { config } = __nccwpck_require__(4617);
-//const { responseWriter } = require("./responseWriter");
+const { retrieveContent } = __nccwpck_require__(3066);
 
 async function fullAssistantProcesser() {
     try {
@@ -36069,7 +36069,8 @@ async function fullAssistantProcesser() {
         const run = await runAssistant(thread.id);
         console.log(run.status);
         const fileId = await giveResults(thread.id);
-        return fileId;
+        const newData = await retrieveContent(fileId);
+        return newData;
     } catch (error) {
         console.error("An error occurred:", error);
     }
@@ -36115,6 +36116,38 @@ const openai = new OpenAI({
 });
 
 module.exports = { openai };
+
+
+/***/ }),
+
+/***/ 3066:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { openai } = __nccwpck_require__(4158);
+const fs = __nccwpck_require__(9896);
+
+/**
+ * Writes the content of the OpenAI file to a local file.
+ * 
+ * @param {string} filePath - The path of the file to retrieve content from.
+ */
+
+async function retrieveContent(filePath) {
+    // FIX LATER: How to define relative path with os/path lib
+    const path = 'src/sample_files/corrected_code.py';
+
+    const file = await openai.files.content(filePath);
+    const newData = await file.text();
+    return newData;
+    
+    // fs.writeFileSync(
+    //     path, 
+    //     newData,
+    //     { encoding: "utf8" }
+    // );
+}
+
+module.exports = { retrieveContent };
 
 
 /***/ }),
@@ -46463,27 +46496,46 @@ async function run() {
         });
 
         // Process with the assistant
-        const fileId = await fullAssistantProcesser();
+        const newData = await fullAssistantProcesser();
 
-        if (!fileId) {
+        if (!newData) {
             throw new Error(
-                "No file ID was returned from the assistant processor"
+                "No new data was returned from the assistant processor"
             );
         }
 
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
 
+        // Fetch the current file content to get its SHA
+        let fileSha;
+        try {
+            const { data: fileData } = await octokit.rest.repos.getContent({
+                owner,
+                repo,
+                path: filePath,
+            });
+            fileSha = fileData.sha;
+        } catch (error) {
+            if (error.status === 404) {
+                console.log(`File ${filePath} does not exist. Creating new file.`);
+            } else {
+                throw error;
+            }
+        }
+
+        // Create or update file
         await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: filePath,
             message: commitMessage,
-            content: Buffer.from(fileId).toString("base64"),
+            content: Buffer.from(newData).toString("base64"),
+            sha: fileSha, // Include SHA if updating, omit if creating new file
         });
 
         console.log(
-            `File ${filePath} has been updated successfully with assistant results.`
+            `File ${filePath} has been ${fileSha ? 'updated' : 'created'} successfully with assistant results.`
         );
     } catch (error) {
         core.setFailed(error.message);
@@ -46491,7 +46543,6 @@ async function run() {
 }
 
 run();
-
 module.exports = __webpack_exports__;
 /******/ })()
 ;

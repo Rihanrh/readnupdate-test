@@ -3,7 +3,7 @@ const { createThread } = require("./createThread");
 const { runAssistant } = require("./runAssistant");
 const { giveResults } = require("./giveResults");
 const { config } = require("./config");
-//const { responseWriter } = require("./responseWriter");
+const { retrieveContent } = require("./retrieveContent");
 
 async function fullAssistantProcesser() {
     try {
@@ -12,7 +12,8 @@ async function fullAssistantProcesser() {
         const run = await runAssistant(thread.id);
         console.log(run.status);
         const fileId = await giveResults(thread.id);
-        return fileId;
+        const newData = await retrieveContent(fileId);
+        return newData;
     } catch (error) {
         console.error("An error occurred:", error);
     }
