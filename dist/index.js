@@ -35993,21 +35993,20 @@ function wrappy (fn, cb) {
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const dotenv = __nccwpck_require__(8889);
+const { getFailedTestNodeIds } = __nccwpck_require__(7239);
 
 dotenv.config();
+
+const failedTestInfo = getFailedTestNodeIds();
 
 const config = {
     assistantID: process.env.ASSISTANT_ID,
     openaiApiKey: process.env.OPENAI_API_KEY,
-    filesToUpload: [
-        "src/sample_files/bucketsort.py",
-        "src/sample_files/test_bucketsort.py",
-        "src/sample_files/bucketsort.json",
-    ],
+    filesToUpload: failedTestInfo.filesToUpload,
+    implementationFile: failedTestInfo.implementationFile
 };
 
 module.exports = { config };
-
 
 /***/ }),
 
@@ -36052,7 +36051,74 @@ module.exports = { createThread };
 
 /***/ }),
 
-/***/ 376:
+/***/ 7239:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const fs = __nccwpck_require__(9896);
+const path = __nccwpck_require__(6928);
+
+function processNodeId(nodeId) {
+    if (!nodeId) return [];
+
+    // Extract the base path without the test parameters
+    const basePath = nodeId.split('::')[0];
+    
+    // Get all three file paths
+    const testFilePath = basePath;
+    const implFilePath = basePath
+        .replace('/python_testcases/', '/python_programs/')
+        .replace('test_', '');
+    const jsonFilePath = basePath
+        .replace('/python_testcases/', '/json_testcases/')
+        .replace('test_', '')
+        .replace('.py', '.json');
+    
+    return {
+        testFile: testFilePath,
+        implementationFile: implFilePath,
+        jsonFile: jsonFilePath,
+        filesToUpload: [testFilePath, implFilePath, jsonFilePath]
+    };
+}
+
+function getFailedTestNodeIds() {
+    try {
+        const reportPath = __nccwpck_require__.ab + "report.json";
+        const jsonData = JSON.parse(fs.readFileSync(__nccwpck_require__.ab + "report.json", 'utf8'));
+        
+        if (!jsonData.tests || !Array.isArray(jsonData.tests)) {
+            return { filesToUpload: [], implementationFile: '' };
+        }
+
+        const failedTest = jsonData.tests.find(test => test.outcome === "failed");
+        return failedTest ? processNodeId(failedTest.nodeid) : { filesToUpload: [], implementationFile: '' };
+    } catch (error) {
+        console.error('Error processing file:', error);
+        return { filesToUpload: [], implementationFile: '' };
+    }
+}
+
+module.exports = {
+    getFailedTestNodeIds,
+    processNodeId
+};
+
+/* Uncomment this block to test the function
+if (require.main === module) {
+    const paths = getFailedTestNodeIds();
+    if (paths.length) {
+        console.log('Test file:', paths[0]);
+        console.log('Implementation file:', paths[1]);
+        console.log('JSON test cases:', paths[2]);
+    } else {
+        console.log('No failed tests found or error occurred');
+    }
+}
+*/
+
+/***/ }),
+
+/***/ 2162:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const { uploadFiles } = __nccwpck_require__(4163);
@@ -36062,8 +36128,14 @@ const { giveResults } = __nccwpck_require__(570);
 const { config } = __nccwpck_require__(4617);
 const { retrieveContent } = __nccwpck_require__(3066);
 
-async function fullAssistantProcesser() {
+async function fullAssistantProcessor() {
     try {
+        // Check if we have files to process
+        if (!config.filesToUpload.length) {
+            console.log("No failed test files found to process");
+            return null;
+        }
+
         const fileIds = await uploadFiles(config.filesToUpload);
         const thread = await createThread(fileIds);
         const run = await runAssistant(thread.id);
@@ -36073,11 +36145,11 @@ async function fullAssistantProcesser() {
         return newData;
     } catch (error) {
         console.error("An error occurred:", error);
+        throw error; // Re-throw the error for proper error handling upstream
     }
 }
 
-module.exports = { fullAssistantProcesser };
-
+module.exports = { fullAssistantProcessor };
 
 /***/ }),
 
@@ -36127,7 +36199,7 @@ const { openai } = __nccwpck_require__(4158);
 const fs = __nccwpck_require__(9896);
 
 /**
- * Writes the content of the OpenAI file to a local file.
+ * Writes the content of the OpenAI file to a new variable.
  * 
  * @param {string} filePath - The path of the file to retrieve content from.
  */
@@ -46485,18 +46557,23 @@ module.exports = /*#__PURE__*/JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45
 var __webpack_exports__ = {};
 const core = __nccwpck_require__(7484);
 const github = __nccwpck_require__(3228);
-const { fullAssistantProcesser } = __nccwpck_require__(376);
+const { fullAssistantProcessor } = __nccwpck_require__(2162);
+const { config } = __nccwpck_require__(4617);
 
 async function run() {
     try {
         const token = core.getInput("github-token", { required: true });
-        const filePath = core.getInput("file-path", { required: true });
+        // const filePath = core.getInput("file-path", { required: true });
         const commitMessage = core.getInput("commit-message", {
             required: true,
         });
 
+        if (!config.implementationFile) {
+            throw new Error("No failed test implementation file found to update");
+        }
+
         // Process with the assistant
-        const newData = await fullAssistantProcesser();
+        const newData = await fullAssistantProcessor();
 
         if (!newData) {
             throw new Error(
@@ -46506,6 +46583,8 @@ async function run() {
 
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
+
+        const filePath = config.implementationFile;
 
         // Fetch the current file content to get its SHA
         let fileSha;
@@ -46531,7 +46610,7 @@ async function run() {
             path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            sha: fileSha, // Include SHA if updating, omit if creating new file
+            sha: fileSha, 
         });
 
         console.log(
