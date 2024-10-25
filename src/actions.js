@@ -6,7 +6,6 @@ const { config } = require("./utils/config");
 async function run() {
     try {
         const token = core.getInput("github-token", { required: true });
-        // const filePath = core.getInput("file-path", { required: true });
         const commitMessage = core.getInput("commit-message", {
             required: true,
         });
