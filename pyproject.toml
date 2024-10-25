@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["src/python_testcases"]
+addopts = "--json-report --json-report-file=src/pytest_report/report.json"
+
+[tool.pytest.json_report]
+report_file = "src/pytest_report/report.json"

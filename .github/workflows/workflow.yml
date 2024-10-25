@@ -1,31 +1,28 @@
-name: Update File
+name: Update Failed Implementation
 
 on:
     workflow_dispatch:
         inputs:
-            file-path:
-                description: "Path to the file to update"
-                required: true
             commit-message:
                 description: "Commit message for the update"
                 required: true
+                default: "fix: Update implementation file with AI-assisted fix"
 
 permissions:
     contents: write
 
 jobs:
-    update-file:
+    update-implementation:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
               uses: actions/checkout@v2
 
-            - name: Update file
+            - name: Update implementation file
               uses: ./ # Uses the action in the root directory
               env:
                   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                   ASSISTANT_ID: ${{ secrets.ASSISTANT_ID }}
               with:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
-                  file-path: ${{ github.event.inputs.file-path }}
                   commit-message: ${{ github.event.inputs.commit-message }}

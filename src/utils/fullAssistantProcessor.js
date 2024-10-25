@@ -5,8 +5,14 @@ const { giveResults } = require("./giveResults");
 const { config } = require("./config");
 const { retrieveContent } = require("./retrieveContent");
 
-async function fullAssistantProcesser() {
+async function fullAssistantProcessor() {
     try {
+        // Check if we have files to process
+        if (!config.filesToUpload.length) {
+            console.log("No failed test files found to process");
+            return null;
+        }
+
         const fileIds = await uploadFiles(config.filesToUpload);
         const thread = await createThread(fileIds);
         const run = await runAssistant(thread.id);
@@ -16,7 +22,8 @@ async function fullAssistantProcesser() {
         return newData;
     } catch (error) {
         console.error("An error occurred:", error);
+        throw error; // Re-throw the error for proper error handling upstream
     }
 }
 
-module.exports = { fullAssistantProcesser };
+module.exports = { fullAssistantProcessor };

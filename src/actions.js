@@ -1,17 +1,22 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
-const { fullAssistantProcesser } = require("./utils/fullAssistantProcesser");
+const { fullAssistantProcessor } = require("./utils/fullAssistantProcessor");
+const { config } = require("./utils/config");
 
 async function run() {
     try {
         const token = core.getInput("github-token", { required: true });
-        const filePath = core.getInput("file-path", { required: true });
+        // const filePath = core.getInput("file-path", { required: true });
         const commitMessage = core.getInput("commit-message", {
             required: true,
         });
 
+        if (!config.implementationFile) {
+            throw new Error("No failed test implementation file found to update");
+        }
+
         // Process with the assistant
-        const newData = await fullAssistantProcesser();
+        const newData = await fullAssistantProcessor();
 
         if (!newData) {
             throw new Error(
@@ -21,6 +26,8 @@ async function run() {
 
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
+
+        const filePath = config.implementationFile;
 
         // Fetch the current file content to get its SHA
         let fileSha;
@@ -46,7 +53,7 @@ async function run() {
             path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            sha: fileSha, // Include SHA if updating, omit if creating new file
+            sha: fileSha, 
         });
 
         console.log(
