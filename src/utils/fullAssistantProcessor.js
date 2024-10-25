@@ -7,7 +7,6 @@ const { retrieveContent } = require("./retrieveContent");
 
 async function fullAssistantProcessor() {
     try {
-        // Check if we have files to process
         if (!config.filesToUpload.length) {
             console.log("No failed test files found to process");
             return null;
@@ -22,7 +21,7 @@ async function fullAssistantProcessor() {
         return newData;
     } catch (error) {
         console.error("An error occurred:", error);
-        throw error; // Re-throw the error for proper error handling upstream
+        throw error; 
     }
 }
 
