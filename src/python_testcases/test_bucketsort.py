@@ -1,4 +1,3 @@
-import pytest
 from utils.load_testdata import load_json_testcases
 from python_programs.bucketsort import bucketsort
 
