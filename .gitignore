@@ -1,2 +1,4 @@
 node_modules
 .env
+/src/python_programs/__pycache__
+/src/python_testcases/__pycache__
