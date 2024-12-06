@@ -36068,23 +36068,18 @@ function processNodeId(nodeId) {
     const implFilePath = basePath
         .replace('/python_testcases/', '/python_programs/')
         .replace('test_', '');
-    const jsonFilePath = basePath
-        .replace('/python_testcases/', '/json_testcases/')
-        .replace('test_', '')
-        .replace('.py', '.json');
     
     return {
         testFile: testFilePath,
         implementationFile: implFilePath,
-        jsonFile: jsonFilePath,
-        filesToUpload: [testFilePath, implFilePath, jsonFilePath]
+        filesToUpload: [testFilePath, implFilePath]
     };
 }
 
 function getFailedTestNodeIds() {
     try {
-        const reportPath = __nccwpck_require__.ab + "report.json";
-        const jsonData = JSON.parse(fs.readFileSync(__nccwpck_require__.ab + "report.json", 'utf8'));
+        const reportPath = path.join(__dirname, '..', 'pytest_report', 'report.json');
+        const jsonData = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
         
         if (!jsonData.tests || !Array.isArray(jsonData.tests)) {
             return { filesToUpload: [], implementationFile: '' };
@@ -36130,7 +36125,6 @@ const { retrieveContent } = __nccwpck_require__(3066);
 
 async function fullAssistantProcessor() {
     try {
-        // Check if we have files to process
         if (!config.filesToUpload.length) {
             console.log("No failed test files found to process");
             return null;
@@ -36145,7 +36139,7 @@ async function fullAssistantProcessor() {
         return newData;
     } catch (error) {
         console.error("An error occurred:", error);
-        throw error; // Re-throw the error for proper error handling upstream
+        throw error; 
     }
 }
 
@@ -46563,7 +46557,6 @@ const { config } = __nccwpck_require__(4617);
 async function run() {
     try {
         const token = core.getInput("github-token", { required: true });
-        // const filePath = core.getInput("file-path", { required: true });
         const commitMessage = core.getInput("commit-message", {
             required: true,
         });
