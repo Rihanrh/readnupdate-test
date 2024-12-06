@@ -51,8 +51,11 @@ jobs:
                   echo "pytest_failed=false" >> $GITHUB_OUTPUT
                 fi
 
-            - name: Ensure pytest_report directory exists
-              run: mkdir -p src/pytest_report
+            - name: Upload pytest report artifact
+              uses: actions/upload-artifact@v3
+              with:
+                name: pytest-report
+                path: src/pytest_report/report.json
 
     update-implementation:
         needs: run-tests
