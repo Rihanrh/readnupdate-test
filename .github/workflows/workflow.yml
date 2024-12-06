@@ -33,6 +33,9 @@ jobs:
                 python -m pip install --upgrade pip
                 pip install -r requirements.txt
 
+            - name: Ensure pytest_report directory exists
+              run: mkdir -p src/pytest_report
+
             - name: Run pytest
               run: |
                 pytest
@@ -48,6 +51,9 @@ jobs:
                   echo "pytest_failed=false" >> $GITHUB_OUTPUT
                 fi
 
+            - name: Ensure pytest_report directory exists
+              run: mkdir -p src/pytest_report
+
     update-implementation:
         needs: run-tests
         if: ${{ needs.run-tests.outputs.pytest_failed == 'true' }}
@@ -55,6 +61,12 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+
+            - name: Download pytest report artifact
+              uses: actions/download-artifact@v3
+              with:
+                name: pytest-report
+                path: ./src/pytest_report
 
             - name: Update implementation file
               uses: ./ # Uses the action in the root directory
