@@ -12,16 +12,11 @@ function processNodeId(nodeId) {
     const implFilePath = basePath
         .replace('/python_testcases/', '/python_programs/')
         .replace('test_', '');
-    const jsonFilePath = basePath
-        .replace('/python_testcases/', '/json_testcases/')
-        .replace('test_', '')
-        .replace('.py', '.json');
     
     return {
         testFile: testFilePath,
         implementationFile: implFilePath,
-        jsonFile: jsonFilePath,
-        filesToUpload: [testFilePath, implFilePath, jsonFilePath]
+        filesToUpload: [testFilePath, implFilePath]
     };
 }
 
