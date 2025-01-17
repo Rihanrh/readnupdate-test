@@ -81,4 +81,4 @@ jobs:
                   ASSISTANT_ID: ${{ secrets.ASSISTANT_ID }}
               with:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
-                  commit-message: ${{ github.event.inputs.commit-message }}
+                  commit-message: "fix: Update implementation file with AI-assisted fix"
