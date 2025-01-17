@@ -5,6 +5,7 @@ def search(x, seq):
     elif x > seq[-1]:
         return len(seq)
     else:
-        for j in range(len(seq) - 1):
-            if x >= seq[j] and x <= seq[j + 1]:
+        seq_enum = list(enumerate(seq))
+        for j in range(len(seq_enum) - 1):
+            if x >= seq_enum[j][1] and x <= seq_enum[j + 1][1]:
                 return j + 1
