@@ -7,6 +7,9 @@ inputs:
   commit-message:
     description: 'Commit message for the update'
     required: true
+  target-branch:
+    description: 'Target branch to apply the fix'
+    required: true
 runs:
   using: 'node16'
   main: 'dist/index.js'

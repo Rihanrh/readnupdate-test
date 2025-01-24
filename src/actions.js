@@ -6,9 +6,8 @@ const { config } = require("./utils/config");
 async function run() {
     try {
         const token = core.getInput("github-token", { required: true });
-        const commitMessage = core.getInput("commit-message", {
-            required: true,
-        });
+        const commitMessage = core.getInput("commit-message", { required: true });
+        const targetBranch = core.getInput("target-branch", { required: true });
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
@@ -22,11 +21,6 @@ async function run() {
 
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
-        const newBranchName = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME;
-
-        if (!newBranchName) {
-            throw new Error("Could not determine the branch name");
-        }
 
         // Try to get the current file's SHA, fallback if not found
         let fileSha = null;
@@ -35,26 +29,25 @@ async function run() {
                 owner,
                 repo,
                 path: config.implementationFile,
-                ref: newBranchName
+                ref: targetBranch
             });
             fileSha = fileContent.sha;
         } catch (error) {
-            // File might not exist in the new branch, which is okay
             console.log(`File not found in branch, will create new: ${error.message}`);
         }
 
-        // Update or create file in the new branch
+        // Update or create file in the target branch
         await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: config.implementationFile,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            branch: newBranchName,
-            sha: fileSha || undefined  // Use SHA only if available
+            branch: targetBranch,
+            sha: fileSha || undefined
         });
 
-        console.log(`File updated in branch ${newBranchName}.`);
+        console.log(`File updated in branch ${targetBranch}.`);
 
     } catch (error) {
         core.setFailed(error.message);
