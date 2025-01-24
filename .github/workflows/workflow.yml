@@ -48,6 +48,15 @@ jobs:
                   echo "pytest_failed=false" >> $GITHUB_OUTPUT
                 fi
 
+            - name: Create AI Fix Branch
+              id: create_branch
+              if: ${{ steps.pytest_status.outputs.pytest_failed == 'true' }}
+              run: |
+                branch_name="ai-fix-${{ github.event.pull_request.number }}"
+                git checkout -b $branch_name
+                git push -u origin $branch_name
+                echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
+
             - name: Upload pytest report artifact
               uses: actions/upload-artifact@v4
               with:
@@ -59,8 +68,10 @@ jobs:
         if: ${{ needs.run-tests.outputs.pytest_failed == 'true' }}
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout repository
+            - name: Checkout AI fix branch
               uses: actions/checkout@v4
+              with:
+                ref: ${{ needs.run-tests.outputs.ai_fix_branch }}
 
             - name: Download pytest report artifact
               uses: actions/download-artifact@v4
