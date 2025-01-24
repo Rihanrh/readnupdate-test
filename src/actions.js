@@ -14,45 +14,50 @@ async function run() {
             throw new Error("No failed test implementation file found to update");
         }
 
+        // Process with the assistant
         const newData = await fullAssistantProcessor();
 
         if (!newData) {
-            throw new Error("No new data was returned from the assistant processor");
+            throw new Error(
+                "No new data was returned from the assistant processor"
+            );
         }
 
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
-        
-        // Use the current branch
-        const currentBranch = github.context.ref.replace('refs/heads/', '');
 
-        // Try to get the current file's SHA, fallback if not found
-        let fileSha = null;
+        const filePath = config.implementationFile;
+
+        // Fetch the current file content to get its SHA
+        let fileSha;
         try {
-            const { data: fileContent } = await octokit.rest.repos.getContent({
+            const { data: fileData } = await octokit.rest.repos.getContent({
                 owner,
                 repo,
-                path: config.implementationFile,
-                ref: currentBranch
+                path: filePath,
             });
-            fileSha = fileContent.sha;
+            fileSha = fileData.sha;
         } catch (error) {
-            console.log(`File not found in branch, will create new: ${error.message}`);
+            if (error.status === 404) {
+                console.log(`File ${filePath} does not exist. Creating new file.`);
+            } else {
+                throw error;
+            }
         }
 
-        // Update or create file in the current branch
+        // Create or update file
         await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
-            path: config.implementationFile,
+            path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            branch: currentBranch,
-            sha: fileSha || undefined
+            sha: fileSha, 
         });
 
-        console.log(`File updated in branch ${currentBranch}.`);
-
+        console.log(
+            `File ${filePath} has been ${fileSha ? 'updated' : 'created'} successfully with assistant results.`
+        );
     } catch (error) {
         core.setFailed(error.message);
     }
