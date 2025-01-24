@@ -61,12 +61,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
-
-            - name: Create new branch
-              run: |
-                git checkout -b ai-fix-${{ github.event.pull_request.number }}
 
             - name: Download pytest report artifact
               uses: actions/download-artifact@v4
@@ -82,10 +76,3 @@ jobs:
               with:
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 commit-message: "AI-assisted fix for failed tests"
-                target-branch: ai-fix-${{ github.event.pull_request.number }}
-      
-            - name: Push new branch
-              run: |
-                git config user.name github-actions
-                git config user.email github-actions@github.com
-                git push -u origin ai-fix-${{ github.event.pull_request.number }}
