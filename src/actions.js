@@ -43,7 +43,7 @@ async function run() {
         const latestCommitSha = refData.object.sha;
 
         // Create a new branch
-        const newBranchName = `${github.context.ref.replace('refs/heads/', '')}-AIFix-${new Date().toISOString().split('T')[0]}`;
+        const newBranchName = core.getInput("base-branch", { required: true });
         await octokit.rest.git.createRef({
             owner,
             repo,
