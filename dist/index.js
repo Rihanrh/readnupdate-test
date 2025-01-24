@@ -46557,9 +46557,7 @@ const { config } = __nccwpck_require__(4617);
 async function run() {
     try {
         const token = core.getInput("github-token", { required: true });
-        const commitMessage = core.getInput("commit-message", {
-            required: true,
-        });
+        const commitMessage = core.getInput("commit-message", { required: true });
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
@@ -46569,11 +46567,10 @@ async function run() {
         const newData = await fullAssistantProcessor();
 
         if (!newData) {
-            throw new Error(
-                "No new data was returned from the assistant processor"
-            );
+            throw new Error("No new data was returned from the assistant processor");
         }
 
+        // Initialize GitHub client
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
         const filePath = config.implementationFile;
@@ -46618,17 +46615,18 @@ async function run() {
             }
         }
 
-        // Create or update file in the new branch
+        // Log the details before updating the file
         console.log("Updating file:", filePath);
         console.log("New data to write:", newData);
         console.log("Branch being updated:", newBranchName);
         
+        // Create or update file in the new branch
         const result = await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: filePath,
             message: commitMessage,
-            content: Buffer.from(newData).toString("base64"),
+            content: Buffer.from(newData).toString("base64"), // Base64 encode the new data
             sha: fileSha, // Use SHA from the new branch
             branch: newBranchName,
         });
@@ -46651,7 +46649,7 @@ async function run() {
         //     body: "Automated AI-assisted fix for failed tests"
         // });
     } catch (error) {
-        core.setFailed(error.message);
+        core.setFailed(`Action failed: ${error.message}`);
     }
 }
 
