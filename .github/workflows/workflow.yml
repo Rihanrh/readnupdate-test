@@ -73,6 +73,7 @@ jobs:
               uses: actions/checkout@v4
               with:
                 ref: ${{ needs.run-tests.outputs.ai_fix_branch }}
+                fetch-depth: 0  # Important: fetch all branches and history
 
             - name: Download pytest report artifact
               uses: actions/download-artifact@v4
@@ -88,3 +89,4 @@ jobs:
               with:
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 commit-message: "AI-assisted fix for failed tests"
+                target-branch: ${{ needs.run-tests.outputs.ai_fix_branch }}
