@@ -1,5 +1,5 @@
 name: 'Failed Implementation Fix'
-description: 'Update implementation file with AI-assisted fix based on failed test'
+description: 'Create a new branch with AI-assisted fix based on failed test'
 inputs:
   github-token:
     description: 'GitHub token for repository access'
@@ -7,6 +7,10 @@ inputs:
   commit-message:
     description: 'Commit message for the update'
     required: true
+  base-branch:
+    description: 'Base branch to create the new branch from'
+    required: false
+    default: 'main'
 runs:
   using: 'node16'
   main: 'dist/index.js'
