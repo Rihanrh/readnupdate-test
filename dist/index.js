@@ -46576,30 +46576,23 @@ async function run() {
         const baseBranch = github.context.payload.repository.default_branch;
         const newBranchName = `ai-fix-${Date.now()}`;
 
-        // Get the SHA of the base branch
-        const { data: refData } = await octokit.rest.git.getRef({
+        // Fetch the base branch content
+        const { data: baseContent } = await octokit.rest.repos.getContent({
             owner,
             repo,
-            ref: `heads/${baseBranch}`,
-        });
-        const sha = refData.object.sha;
-
-        // Create a new branch
-        await octokit.rest.git.createRef({
-            owner,
-            repo,
-            ref: `refs/heads/${newBranchName}`,
-            sha: sha,
+            path: config.implementationFile,
+            ref: baseBranch
         });
 
-        // Create or update file in the new branch
+        // Create or update file directly in a new branch
         await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: config.implementationFile,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            branch: newBranchName
+            branch: newBranchName,
+            sha: baseContent.sha
         });
 
         // Create a pull request
