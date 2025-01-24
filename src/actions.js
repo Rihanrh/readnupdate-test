@@ -26,61 +26,29 @@ async function run() {
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
 
-        // Get the current branch name
-        const { data: { name: currentBranch } } = await octokit.rest.repos.get({
-            owner,
-            repo
-        });
-
         const filePath = config.implementationFile;
 
-        // Create a new branch from the current branch
-        const { data: branchRef } = await octokit.rest.git.getRef({
-            owner,
-            repo,
-            ref: `heads/${currentBranch}`
-        });
-
-        const newBranchName = `ai-fix-${Date.now()}`;
-        await octokit.rest.git.createRef({
-            owner,
-            repo,
-            ref: `refs/heads/${newBranchName}`,
-            sha: branchRef.object.sha
-        });
-
         // Fetch the current file content to get its SHA
-        let fileSha;
-        try {
-            const { data: fileData } = await octokit.rest.repos.getContent({
-                owner,
-                repo,
-                path: filePath,
-                ref: newBranchName
-            });
-            fileSha = fileData.sha;
-        } catch (error) {
-            if (error.status === 404) {
-                console.log(`File ${filePath} does not exist. Creating new file.`);
-            } else {
-                throw error;
-            }
-        }
+        const { data: fileData } = await octokit.rest.repos.getContent({
+            owner,
+            repo,
+            path: filePath,
+            ref: process.env.GITHUB_HEAD_REF // Use the current branch reference
+        });
 
-        // Update file in the new branch
+        // Create or update file
         await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            sha: fileSha,
-            branch: newBranchName
+            sha: fileData.sha,
+            branch: process.env.GITHUB_HEAD_REF
         });
 
-        // Push the new branch
         console.log(
-            `Created new branch ${newBranchName} and updated ${filePath} with AI-generated fix.`
+            `File ${filePath} has been updated successfully with assistant results.`
         );
     } catch (error) {
         core.setFailed(error.message);
