@@ -11,7 +11,9 @@ async function run() {
         });
 
         if (!config.implementationFile) {
-            throw new Error("No failed test implementation file found to update");
+            throw new Error(
+                "No failed test implementation file found to update"
+            );
         }
 
         // Process with the assistant
@@ -51,14 +53,14 @@ async function run() {
             sha: latestCommitSha,
         });
 
-        // Fetch the current file content to get its SHA (if it exists)
+        // Fetch the current file content to get its SHA from the default branch
         let fileSha;
         try {
             const { data: fileData } = await octokit.rest.repos.getContent({
                 owner,
                 repo,
                 path: filePath,
-                ref: newBranchName,
+                ref: defaultBranch,
             });
             fileSha = fileData.sha;
         } catch (error) {
@@ -71,17 +73,18 @@ async function run() {
         console.log("Updating file:", filePath);
         console.log("New data to write:", newData);
         console.log("Branch being updated:", newBranchName);
-        
+        console.log("File SHA:", fileSha);
+
         const result = await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            sha: fileSha || undefined,
+            sha: fileSha,
             branch: newBranchName,
         });
-        
+
         console.log("File update result:", result);
 
         console.log(
