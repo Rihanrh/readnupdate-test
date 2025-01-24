@@ -51,14 +51,14 @@ async function run() {
             sha: latestCommitSha,
         });
 
-        // Fetch the current file content to get its SHA
+        // Fetch the current file content to get its SHA from the new branch
         let fileSha;
         try {
             const { data: fileData } = await octokit.rest.repos.getContent({
                 owner,
                 repo,
                 path: filePath,
-                ref: defaultBranch, // Use default branch to get file SHA
+                ref: newBranchName, // Use the new branch to get file SHA
             });
             fileSha = fileData.sha;
         } catch (error) {
@@ -78,15 +78,17 @@ async function run() {
             path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            sha: fileSha, // Use SHA from default branch
+            sha: fileSha, // Use SHA from the new branch
             branch: newBranchName,
         });
-        
+
         console.log("File update result:", result);
 
-        console.log(
-            `Created new branch ${newBranchName} and updated ${filePath} successfully with assistant results.`
-        );
+        // Log the details of the commit and file update
+        console.log(`Created new branch ${newBranchName} and updated ${filePath} successfully with assistant results.`);
+        console.log(`Commit SHA: ${result.data.commit.sha}`);
+        console.log(`File updated at: ${result.data.content.html_url}`);
+        console.log(`Download updated file: ${result.data.content.download_url}`);
 
         // Optionally, create a pull request: To be implemented later
         // await octokit.rest.pulls.create({
