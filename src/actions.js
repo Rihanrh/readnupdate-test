@@ -68,15 +68,21 @@ async function run() {
         }
 
         // Create or update file in the new branch
-        await octokit.rest.repos.createOrUpdateFileContents({
+        console.log("Updating file:", filePath);
+        console.log("New data to write:", newData);
+        console.log("Branch being updated:", newBranchName);
+        
+        const result = await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            sha: fileSha,
+            sha: fileSha || undefined,
             branch: newBranchName,
         });
+        
+        console.log("File update result:", result);
 
         console.log(
             `Created new branch ${newBranchName} and updated ${filePath} successfully with assistant results.`
