@@ -6,8 +6,9 @@ const { config } = require("./utils/config");
 async function run() {
     try {
         const token = core.getInput("github-token", { required: true });
-        const commitMessage = core.getInput("commit-message", { required: true });
-        const targetBranch = core.getInput("target-branch", { required: true });
+        const commitMessage = core.getInput("commit-message", {
+            required: true,
+        });
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
@@ -21,33 +22,38 @@ async function run() {
 
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
+        
+        // Get the base branch (current PR branch)
+        const baseBranch = github.context.payload.pull_request.head.ref;
+        
+        // Create a new branch name
+        const newBranchName = `ai-fix-${github.context.issue.number}`;
 
-        // Try to get the current file's SHA, fallback if not found
-        let fileSha = null;
-        try {
-            const { data: fileContent } = await octokit.rest.repos.getContent({
-                owner,
-                repo,
-                path: config.implementationFile,
-                ref: targetBranch
-            });
-            fileSha = fileContent.sha;
-        } catch (error) {
-            console.log(`File not found in branch, will create new: ${error.message}`);
-        }
+        // Create a new branch from the base branch
+        const { data: baseRef } = await octokit.rest.git.getRef({
+            owner,
+            repo,
+            ref: `heads/${baseBranch}`
+        });
 
-        // Update or create file in the target branch
+        await octokit.rest.git.createRef({
+            owner,
+            repo,
+            ref: `refs/heads/${newBranchName}`,
+            sha: baseRef.object.sha
+        });
+
+        // Update or create file in the new branch
         await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: config.implementationFile,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            branch: targetBranch,
-            sha: fileSha || undefined
+            branch: newBranchName
         });
 
-        console.log(`File updated in branch ${targetBranch}.`);
+        console.log(`Branch ${newBranchName} created and file updated.`);
 
     } catch (error) {
         core.setFailed(error.message);
