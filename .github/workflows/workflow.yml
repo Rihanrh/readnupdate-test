@@ -87,10 +87,9 @@ jobs:
 
             - name: Push New Branch
               run: |
-                  git config pull.rebase true
-                  git fetch origin
-                  git pull origin ${{ steps.create-branch.outputs.branch_name }} --rebase --autostash
-                  git push -u origin ${{ steps.create-branch.outputs.branch_name }}
+                  git config user.name github-actions
+                  git config user.email github-actions@github.com
+                  git push -f origin ${{ steps.create-branch.outputs.branch_name }}
 
             # - name: Create Pull Request
             #   env:
