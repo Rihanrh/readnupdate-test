@@ -46557,8 +46557,9 @@ const { config } = __nccwpck_require__(4617);
 async function run() {
     try {
         const token = core.getInput("github-token", { required: true });
-        const commitMessage = core.getInput("commit-message", { required: true });
-        const newBranchName = core.getInput("base-branch", { required: true });
+        const commitMessage = core.getInput("commit-message", {
+            required: true,
+        });
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
@@ -46568,101 +46569,76 @@ async function run() {
         const newData = await fullAssistantProcessor();
 
         if (!newData) {
-            throw new Error("No new data was returned from the assistant processor");
+            throw new Error(
+                "No new data was returned from the assistant processor"
+            );
         }
 
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
 
+        // Get the current branch name
+        const { data: { name: currentBranch } } = await octokit.rest.repos.get({
+            owner,
+            repo
+        });
+
         const filePath = config.implementationFile;
 
-        // Get the current branch reference
-        const { data: currentBranch } = await octokit.rest.repos.get({
+        // Create a new branch from the current branch
+        const { data: branchRef } = await octokit.rest.git.getRef({
             owner,
             repo,
+            ref: `heads/${currentBranch}`
         });
-        const defaultBranch = currentBranch.default_branch;
 
-        // Get the latest commit SHA of the default branch
-        const { data: refData } = await octokit.rest.git.getRef({
-            owner,
-            repo,
-            ref: `heads/${defaultBranch}`,
-        });
-        const latestCommitSha = refData.object.sha;
-
-        // Create the new branch from the default branch
+        const newBranchName = `ai-fix-${Date.now()}`;
         await octokit.rest.git.createRef({
             owner,
             repo,
             ref: `refs/heads/${newBranchName}`,
-            sha: latestCommitSha,
+            sha: branchRef.object.sha
         });
 
-        // Fetch the current file content to get its SHA from the new branch
+        // Fetch the current file content to get its SHA
         let fileSha;
         try {
             const { data: fileData } = await octokit.rest.repos.getContent({
                 owner,
                 repo,
                 path: filePath,
-                ref: newBranchName,  // Check in the new branch
+                ref: newBranchName
             });
             fileSha = fileData.sha;
         } catch (error) {
             if (error.status === 404) {
-                // File not found in the new branch, fetch from the default branch
-                const { data: fileDataDefault } = await octokit.rest.repos.getContent({
-                    owner,
-                    repo,
-                    path: filePath,
-                    ref: defaultBranch, // Fallback to default branch
-                });
-                fileSha = fileDataDefault.sha;
+                console.log(`File ${filePath} does not exist. Creating new file.`);
             } else {
                 throw error;
             }
         }
 
-        // Now create or update the file in the new branch
-        console.log("Updating file:", filePath);
-        console.log("New data to write:", newData);
-        console.log("Branch being updated:", newBranchName);
-
-        const result = await octokit.rest.repos.createOrUpdateFileContents({
+        // Update file in the new branch
+        await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            sha: fileSha,  // Use the correct file SHA (either from new branch or fallback)
-            branch: newBranchName,  // Make sure the file is updated in the new branch
+            sha: fileSha,
+            branch: newBranchName
         });
 
-        console.log("File update result:", result);
-
-        // Log the details of the commit and file update
-        console.log(`Created new branch ${newBranchName} and updated ${filePath} successfully with assistant results.`);
-        console.log(`Commit SHA: ${result.data.commit.sha}`);
-        console.log(`File updated at: ${result.data.content.html_url}`);
-        console.log(`Download updated file: ${result.data.content.download_url}`);
-
-        // Optionally, create a pull request: To be implemented later
-        // await octokit.rest.pulls.create({
-        //     owner,
-        //     repo,
-        //     title: commitMessage,
-        //     head: newBranchName,
-        //     base: defaultBranch,
-        //     body: "Automated AI-assisted fix for failed tests"
-        // });
+        // Push the new branch
+        console.log(
+            `Created new branch ${newBranchName} and updated ${filePath} with AI-generated fix.`
+        );
     } catch (error) {
         core.setFailed(error.message);
     }
 }
 
 run();
-
 module.exports = __webpack_exports__;
 /******/ })()
 ;

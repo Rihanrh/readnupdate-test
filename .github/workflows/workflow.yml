@@ -1,15 +1,18 @@
 name: Update Failed Implementation
 
 on:
-    pull_request:
-        branches:
-            - main
+    workflow_dispatch:
+        inputs:
+            commit-message:
+                description: "Commit message for the update"
+                required: true
+                default: "fix: Update implementation file with AI-assisted fix"
 
 permissions:
     contents: write
-    pull-requests: write
 
 jobs:
+
     run-tests:
         strategy:
             fail-fast: false
@@ -61,6 +64,8 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+              with:
+                fetch-depth: 0  # Important for accessing all branches
 
             - name: Download pytest report artifact
               uses: actions/download-artifact@v4
@@ -68,35 +73,11 @@ jobs:
                 name: pytest-report
                 path: pytest_report
 
-            - name: Create AI Fix Branch
-              id: create-branch
-              run: |
-                BRANCH_NAME="${{ github.head_ref || github.ref_name }}-AIFix-$(date +%Y-%m-%d)"
-                git checkout -b $BRANCH_NAME
-                echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-
-            - name: Prepare AI-Assisted Fix
-              uses: ./ 
+            - name: Update implementation file
+              uses: ./ # Uses the action in the root directory
               env:
                   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                   ASSISTANT_ID: ${{ secrets.ASSISTANT_ID }}
               with:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
-                  commit-message: "fix: Prepare AI-assisted implementation update"
-                  base-branch: ${{ steps.create-branch.outputs.branch_name }}
-
-            - name: Push New Branch
-              run: |
-                  git config user.name "github-actions"
-                  git config user.email "actions@github.com"
-                  git push --force origin ${{ steps.create-branch.outputs.branch_name }}
-
-            # - name: Create Pull Request
-            #   env:
-            #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            #   run: |
-            #     gh pr create \
-            #       --base ${{ github.event.pull_request.base.ref }} \
-            #       --head ${{ steps.create-branch.outputs.branch_name }} \
-            #       --title "AI-Assisted Fix for Failed Tests" \
-            #       --body "Automated AI-generated fix based on test failures"
+                  commit-message: ${{ github.event.inputs.commit-message }}
