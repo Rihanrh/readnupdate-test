@@ -46560,6 +46560,7 @@ async function run() {
         const commitMessage = core.getInput("commit-message", {
             required: true,
         });
+        const targetBranch = core.getInput("target-branch", { required: true }); // Get target branch
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
@@ -46586,28 +46587,30 @@ async function run() {
                 owner,
                 repo,
                 path: filePath,
+                ref: targetBranch, // Specify the target branch for fetching the file
             });
             fileSha = fileData.sha;
         } catch (error) {
             if (error.status === 404) {
-                console.log(`File ${filePath} does not exist. Creating new file.`);
+                console.log(`File ${filePath} does not exist on branch ${targetBranch}. Creating new file.`);
             } else {
                 throw error;
             }
         }
 
-        // Create or update file
+        // Create or update file on the target branch
         await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
             path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            sha: fileSha, 
+            sha: fileSha, // Include the SHA if the file exists
+            branch: targetBranch, // Specify the target branch for the update
         });
 
         console.log(
-            `File ${filePath} has been ${fileSha ? 'updated' : 'created'} successfully with assistant results.`
+            `File ${filePath} has been ${fileSha ? 'updated' : 'created'} successfully on branch ${targetBranch} with assistant results.`
         );
     } catch (error) {
         core.setFailed(error.message);
@@ -46615,6 +46618,7 @@ async function run() {
 }
 
 run();
+
 module.exports = __webpack_exports__;
 /******/ })()
 ;
