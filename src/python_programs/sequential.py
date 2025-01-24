@@ -1,11 +1,5 @@
-
 def search(x, seq):
-    if x < seq[0]:
-        return 0
-    elif x > seq[-1]:
-        return len(seq)
-    else:
-        seq_enum = list(enumerate(seq))
-        for j in range(len(seq_enum) - 1):
-            if x >= seq_enum[j][1] and x <= seq_enum[j + 1][1]:
-                return j + 1
+    for i in range(len(seq)):
+        if x <= seq[i]:
+            return i
+    return len(seq)
