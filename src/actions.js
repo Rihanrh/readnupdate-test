@@ -23,23 +23,21 @@ async function run() {
         const octokit = github.getOctokit(token);
         const { owner, repo } = github.context.repo;
         const baseBranch = github.context.payload.repository.default_branch;
-        
-        // Use the branch name from the workflow environment
         const newBranchName = process.env.GITHUB_HEAD_REF || process.env.GITHUB_REF_NAME;
 
         if (!newBranchName) {
             throw new Error("Could not determine the branch name");
         }
 
-        // Fetch the base branch content
-        const { data: baseContent } = await octokit.rest.repos.getContent({
+        // Fetch the current file content and SHA
+        const { data: fileContent } = await octokit.rest.repos.getContent({
             owner,
             repo,
             path: config.implementationFile,
-            ref: baseBranch
+            ref: newBranchName
         });
 
-        // Create or update file directly in the new branch
+        // Create or update file in the new branch
         await octokit.rest.repos.createOrUpdateFileContents({
             owner,
             repo,
@@ -47,7 +45,7 @@ async function run() {
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
             branch: newBranchName,
-            sha: baseContent.sha
+            sha: fileContent.sha
         });
 
         // Create a pull request
