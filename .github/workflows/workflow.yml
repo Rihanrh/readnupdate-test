@@ -56,13 +56,12 @@ jobs:
                 branch_name="ai-fix-${{ github.event.pull_request.number }}"
                 git checkout -b $branch_name
                 git push -u origin $branch_name
-                echo "branch_name=$branch_name" >> $GITHUB_ENV
                 echo "ai_fix_branch=$branch_name" >> $GITHUB_OUTPUT
-              
+
             - name: Debug Outputs
               run: |
-                echo "pytest_failed: ${{ steps.pytest_status.outputs.pytest_failed }}"
-                echo "ai_fix_branch: ${{ env.ai_fix_branch }}"
+                  echo "pytest_failed: ${{ steps.pytest_status.outputs.pytest_failed }}"
+                  echo "ai_fix_branch: ${{ steps.create_branch.outputs.branch_name }}"
 
             - name: Upload pytest report artifact
               uses: actions/upload-artifact@v4
@@ -93,6 +92,6 @@ jobs:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 ASSISTANT_ID: ${{ secrets.ASSISTANT_ID }}
               with:
-                target-branch: ${{ env.ai_fix_branch }}
+                target-branch: ${{ needs.run-tests.outputs.ai_fix_branch }}
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 commit-message: "AI-assisted fix for failed tests"
