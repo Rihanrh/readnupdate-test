@@ -46557,10 +46557,8 @@ const { config } = __nccwpck_require__(4617);
 async function run() {
     try {
         const token = core.getInput("github-token", { required: true });
-        const commitMessage = core.getInput("commit-message", {
-            required: true,
-        });
-        const targetBranch = core.getInput("target-branch", { required: true }); // Get target branch
+        const commitMessage = core.getInput("commit-message", { required: true });
+        const targetBranch = core.getInput("target-branch", { required: true });
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
@@ -46587,12 +46585,12 @@ async function run() {
                 owner,
                 repo,
                 path: filePath,
-                ref: targetBranch, // Specify the target branch for fetching the file
+                ref: targetBranch  // Use the specified target branch
             });
             fileSha = fileData.sha;
         } catch (error) {
             if (error.status === 404) {
-                console.log(`File ${filePath} does not exist on branch ${targetBranch}. Creating new file.`);
+                console.log(`File ${filePath} does not exist. Creating new file.`);
             } else {
                 throw error;
             }
@@ -46605,12 +46603,12 @@ async function run() {
             path: filePath,
             message: commitMessage,
             content: Buffer.from(newData).toString("base64"),
-            sha: fileSha, // Include the SHA if the file exists
-            branch: targetBranch, // Specify the target branch for the update
+            sha: fileSha,
+            branch: targetBranch  // Specify the target branch
         });
 
         console.log(
-            `File ${filePath} has been ${fileSha ? 'updated' : 'created'} successfully on branch ${targetBranch} with assistant results.`
+            `File ${filePath} has been ${fileSha ? 'updated' : 'created'} successfully on branch ${targetBranch}.`
         );
     } catch (error) {
         core.setFailed(error.message);
@@ -46618,7 +46616,6 @@ async function run() {
 }
 
 run();
-
 module.exports = __webpack_exports__;
 /******/ })()
 ;
