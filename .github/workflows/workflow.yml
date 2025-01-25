@@ -72,7 +72,7 @@ jobs:
             - name: Checkout AI fix branch
               uses: actions/checkout@v4
               with:
-                ref: $ai_fix_branch
+                ref: ${{ needs.run-tests.outputs.ai_fix_branch }}
                 fetch-depth: 0  # Important: fetch all branches and history
 
             - name: Download pytest report artifact
