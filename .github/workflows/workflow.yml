@@ -45,8 +45,9 @@ jobs:
               run: |
                 if [[ "${{ steps.pytest_result.outcome }}" == "failure" ]]; then
                   echo "pytest_failed=true" >> $GITHUB_OUTPUT
+                  echo "ai_fix_branch=$branch_name" >> $GITHUB_OUTPUT
                 else
-                  echo "pytest_failed=false" >> $GITHUB_OUTPUT
+                  echo "ai_fix_branch=$branch_name" >> $GITHUB_OUTPUT
                 fi
 
             - name: Create AI Fix Branch
