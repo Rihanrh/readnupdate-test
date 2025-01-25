@@ -87,6 +87,6 @@ jobs:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 ASSISTANT_ID: ${{ secrets.ASSISTANT_ID }}
               with:
+                target-branch: ${{ needs.run-tests.outputs.ai_fix_branch }}
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 commit-message: "AI-assisted fix for failed tests"
-                target-branch: ${{ needs.run-tests.outputs.ai_fix_branch }}
