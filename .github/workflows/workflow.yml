@@ -56,7 +56,10 @@ jobs:
                 branch_name="ai-fix-${{ github.event.pull_request.number }}"
                 git checkout -b $branch_name
                 git push -u origin $branch_name
+                echo "Branch name: $branch_name"
+                echo "$branch_name"
                 echo "ai_fix_branch=$branch_name" >> $GITHUB_OUTPUT
+                cat $GITHUB_OUTPUT
 
             - name: Debug Outputs
               run: |
