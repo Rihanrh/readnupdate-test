@@ -56,15 +56,14 @@ jobs:
                 branch_name="ai-fix-${{ github.event.pull_request.number }}"
                 git checkout -b $branch_name
                 git push -u origin $branch_name
-                echo "Branch name: $branch_name"
-                echo "$branch_name"
-                echo "ai_fix_branch=$branch_name" >> $GITHUB_OUTPUT
+                echo "$branch_name" > ai_fix_branch.txt
+                echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
                 cat $GITHUB_OUTPUT
 
             - name: Debug Outputs
               run: |
                   echo "pytest_failed: ${{ steps.pytest_status.outputs.pytest_failed }}"
-                  echo "ai_fix_branch: ${{ steps.create_branch.outputs.ai_fix_branch }}"
+                  echo "ai_fix_branch: ${{ steps.create_branch.outputs.branch_name }}"
 
             - name: Upload pytest report artifact
               uses: actions/upload-artifact@v4
@@ -89,12 +88,19 @@ jobs:
                 name: pytest-report
                 path: pytest_report
 
+            - name: Read AI Fix Branch Name
+              id: read_branch
+              run: |
+                branch_name=$(cat ai_fix_branch.txt)
+                echo "target_branch=$branch_name" >> $GITHUB_OUTPUT
+                echo "Branch name from file: $branch_name"
+
             - name: Update implementation file
               uses: ./ # Uses the action in the root directory
               env:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 ASSISTANT_ID: ${{ secrets.ASSISTANT_ID }}
               with:
-                target-branch: ${{ needs.run-tests.outputs.ai_fix_branch }}
+                target-branch: ${{ steps.read_branch.outputs.target_branch }}
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 commit-message: "AI-assisted fix for failed tests"
