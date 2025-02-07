@@ -11,8 +11,6 @@ permissions:
 
 jobs:
     run-tests:
-        strategy:
-            fail-fast: false
         runs-on: ubuntu-latest
         outputs:
             pytest_failed: ${{ steps.pytest_status.outputs.pytest_failed }}
@@ -66,10 +64,6 @@ jobs:
                 name: ai-fix-branch
                 path: ai_fix_branch.txt
 
-            - name: Debug Outputs
-              run: |
-                  echo "pytest_failed: ${{ steps.pytest_status.outputs.pytest_failed }}"
-
             - name: Upload pytest report artifact
               uses: actions/upload-artifact@v4
               with:
@@ -81,6 +75,9 @@ jobs:
         if: ${{ needs.run-tests.outputs.pytest_failed == 'true' }}
         runs-on: ubuntu-latest
         steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
             - name: Download ai-fix-branch artifact
               uses: actions/download-artifact@v4
               with:
