@@ -16,7 +16,6 @@ jobs:
         runs-on: ubuntu-latest
         outputs:
             pytest_failed: ${{ steps.pytest_status.outputs.pytest_failed }}
-            ai_fix_branch: ${{ steps.create_branch.outputs.branch_name }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -53,7 +52,8 @@ jobs:
               id: create_branch
               if: ${{ steps.pytest_status.outputs.pytest_failed == 'true' }}
               run: |
-                branch_name="ai-fix-${{ github.event.pull_request.number }}"
+                original_branch="${{ github.head_ref }}"
+                branch_name="${original_branch}-AIFIX-${{ github.event.pull_request.number }}"
                 git checkout -b $branch_name
                 git push -u origin $branch_name
                 echo "$branch_name" > ai_fix_branch.txt
@@ -69,7 +69,6 @@ jobs:
             - name: Debug Outputs
               run: |
                   echo "pytest_failed: ${{ steps.pytest_status.outputs.pytest_failed }}"
-                  echo "ai_fix_branch: ${{ steps.create_branch.outputs.branch_name }}"
 
             - name: Upload pytest report artifact
               uses: actions/upload-artifact@v4
@@ -82,12 +81,6 @@ jobs:
         if: ${{ needs.run-tests.outputs.pytest_failed == 'true' }}
         runs-on: ubuntu-latest
         steps:
-            - name: Checkout AI fix branch
-              uses: actions/checkout@v4
-              with:
-                ref: ${{ needs.run-tests.outputs.ai_fix_branch }}
-                fetch-depth: 0  # Important: fetch all branches and history
-
             - name: Download ai-fix-branch artifact
               uses: actions/download-artifact@v4
               with:
