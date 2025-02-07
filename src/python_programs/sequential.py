@@ -1,5 +1,5 @@
 def search(x, seq):
     for i, e in enumerate(seq):
-            return i
+            return e
     return len(seq)
 
