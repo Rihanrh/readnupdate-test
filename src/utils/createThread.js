@@ -12,7 +12,7 @@ const { openai } = require("./openaiClient");
  * console.log(thread)
  * 
  */
-async function createThread(fileIds) {
+async function createThread(fileIds, feedback) {
     const attachments = fileIds.map((fileId) => ({
         file_id: fileId,
         tools: [{ type: "code_interpreter" }],
@@ -22,7 +22,7 @@ async function createThread(fileIds) {
         messages: [
             {
                 role: "user",
-                content: "Run instructions",
+                content: feedback,
                 attachments: attachments,
             },
         ],

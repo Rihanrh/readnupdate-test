@@ -10,6 +10,10 @@ inputs:
   target-branch:
     description: 'Target branch to apply the fix'
     required: true
+  feedback:
+    description: 'User feedback from PR comments'
+    required: false
+    default: 'Run instructions'
 runs:
   using: 'node16'
   main: 'dist/index.js'

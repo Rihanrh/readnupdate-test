@@ -8,13 +8,14 @@ async function run() {
         const token = core.getInput("github-token", { required: true });
         const commitMessage = core.getInput("commit-message", { required: true });
         const targetBranch = core.getInput("target-branch", { required: true });
+        const feedback = core.getInput("feedback") || "Run instructions";
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
         }
 
         // Process with the assistant
-        const newData = await fullAssistantProcessor();
+        const newData = await fullAssistantProcessor(feedback);
 
         if (!newData) {
             throw new Error(

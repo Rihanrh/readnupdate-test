@@ -36027,7 +36027,7 @@ const { openai } = __nccwpck_require__(4158);
  * console.log(thread)
  * 
  */
-async function createThread(fileIds) {
+async function createThread(fileIds, feedback) {
     const attachments = fileIds.map((fileId) => ({
         file_id: fileId,
         tools: [{ type: "code_interpreter" }],
@@ -36037,7 +36037,7 @@ async function createThread(fileIds) {
         messages: [
             {
                 role: "user",
-                content: "Run instructions",
+                content: feedback,
                 attachments: attachments,
             },
         ],
@@ -36123,7 +36123,7 @@ const { giveResults } = __nccwpck_require__(570);
 const { config } = __nccwpck_require__(4617);
 const { retrieveContent } = __nccwpck_require__(3066);
 
-async function fullAssistantProcessor() {
+async function fullAssistantProcessor(feedback) {
     try {
         if (!config.filesToUpload.length) {
             console.log("No failed test files found to process");
@@ -36131,7 +36131,7 @@ async function fullAssistantProcessor() {
         }
 
         const fileIds = await uploadFiles(config.filesToUpload);
-        const thread = await createThread(fileIds);
+        const thread = await createThread(fileIds, feedback);
         const run = await runAssistant(thread.id);
         console.log(run.status);
         const fileId = await giveResults(thread.id);
@@ -46559,13 +46559,14 @@ async function run() {
         const token = core.getInput("github-token", { required: true });
         const commitMessage = core.getInput("commit-message", { required: true });
         const targetBranch = core.getInput("target-branch", { required: true });
+        const feedback = core.getInput("feedback") || "Run instructions";
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
         }
 
         // Process with the assistant
-        const newData = await fullAssistantProcessor();
+        const newData = await fullAssistantProcessor(feedback);
 
         if (!newData) {
             throw new Error(

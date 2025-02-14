@@ -5,7 +5,7 @@ const { giveResults } = require("./giveResults");
 const { config } = require("./config");
 const { retrieveContent } = require("./retrieveContent");
 
-async function fullAssistantProcessor() {
+async function fullAssistantProcessor(feedback) {
     try {
         if (!config.filesToUpload.length) {
             console.log("No failed test files found to process");
@@ -13,7 +13,7 @@ async function fullAssistantProcessor() {
         }
 
         const fileIds = await uploadFiles(config.filesToUpload);
-        const thread = await createThread(fileIds);
+        const thread = await createThread(fileIds, feedback);
         const run = await runAssistant(thread.id);
         console.log(run.status);
         const fileId = await giveResults(thread.id);

@@ -4,6 +4,8 @@ on:
     pull_request:
         branches:
             - main
+    issue_comment:
+        types: [created]
 
 permissions:
     contents: write
@@ -11,10 +13,17 @@ permissions:
 
 jobs:
     check-branch-status:
+        # Run this job only when a pull request is opened or an issue comment is created
+        if: |
+            github.event_name == 'pull_request' || 
+            (github.event_name == 'issue_comment' && 
+            github.event.issue.pull_request && 
+            contains(github.event.issue.labels.*.name, 'AIFIX'))
         runs-on: ubuntu-latest
         outputs:
             is_aifix: ${{ steps.check_branch.outputs.is_aifix }}
             should_create_pr: ${{ steps.check_pr.outputs.should_create_pr }}
+            feedback_comment: ${{ steps.get_feedback.outputs.comment }}
         steps:
             - name: Check if branch is AI-generated
               id: check_branch
@@ -24,19 +33,32 @@ jobs:
                 else
                   echo "is_aifix=false" >> $GITHUB_OUTPUT
                 fi
+
+            - name: Get Latest Feedback Comment
+              id: get_feedback
+              if: github.event_name == 'issue_comment'
+              run: |
+                if [[ "${{ github.event.comment.body }}" == *"[FEEDBACK]"* ]]; then
+                  echo "comment=${{ github.event.comment.body }}" >> $GITHUB_OUTPUT
+                  echo "Feedback comment found"
+                else
+                  echo "comment=" >> $GITHUB_OUTPUT
+                  echo "No feedback comment found"
+                fi
+
             - name: Check Pull Request Status
               id: check_pr
               if: steps.check_branch.outputs.is_aifix == 'true'
               run: |
                 # Get PR title
                 pr_title="${{ github.event.pull_request.title }}"
-                # Check if this is an automated PR creation
-                if [[ "$pr_title" == "[AIFIX]"* ]]; then
+                # Allow PR creation if there's feedback or if it's not an automated PR
+                if [[ "$pr_title" == "[AIFIX]"* && "${{ steps.get_feedback.outputs.comment }}" == "" ]]; then
                   echo "should_create_pr=false" >> $GITHUB_OUTPUT
-                  echo "This is an automated Pull Request. Preventing infinite loop."
+                  echo "This is an automated Pull Request without feedback. Preventing infinite loop."
                 else
                   echo "should_create_pr=true" >> $GITHUB_OUTPUT
-                  echo "Human changes detected, will create PR if needed"
+                  echo "Human changes or feedback detected, will create PR if needed"
                 fi
 
     run-tests:
@@ -81,7 +103,9 @@ jobs:
               run: |
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 if [[ "${{ steps.pytest_status.outputs.pytest_failed }}" == "true" ]]; then
-                  gh pr comment "${{ github.event.pull_request.number }}" --body "⚠️ Tests failed. To prevent infinite PR creation loop, no further PR will be created. Please review the changes manually."
+                  gh pr comment "${{ github.event.pull_request.number }}" --body "⚠️ Tests failed. To prevent infinite PR creation loop, no further PR will be created. 
+                  Please review the changes manually or give us feedback.
+                  \nYou can give feedback to the AI model by commenting with a '[FEEDBACK]' tag within the comment."
                 else
                   gh pr comment "${{ github.event.pull_request.number }}" --body "✅ Tests passed successfully! The AI-assisted fixes have resolved the issues."
                 fi
@@ -114,7 +138,9 @@ jobs:
 
     update-implementation:
         needs: [check-branch-status, run-tests]
-        if: needs.run-tests.outputs.pytest_failed == 'true'
+        if: |
+          needs.run-tests.outputs.pytest_failed == 'true' ||
+          needs.check-branch-status.outputs.feedback_comment != ''
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
@@ -154,6 +180,7 @@ jobs:
                 target-branch: ${{ steps.read_branch.outputs.target_branch }}
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 commit-message: "[AIFIX] fix for failed tests"
+                feedback: ${{ needs.check-branch-status.outputs.feedback_comment }}
             
             - name: Create Pull Request
               if: |
