@@ -76,6 +76,16 @@ jobs:
                   echo "pytest_failed=false" >> $GITHUB_OUTPUT
                 fi
 
+            - name: Comment Test Results of an AI Fix
+              if: needs.check-branch-status.outputs.is_aifix == 'true'
+              run: |
+                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+                if [[ "${{ steps.pytest_status.outputs.pytest_failed }}" == "true" ]]; then
+                  gh pr comment "${{ github.event.pull_request.number }}" --body "⚠️ Tests failed. To prevent infinite PR creation loop, no further PR will be created. Please review the changes manually."
+                else
+                  gh pr comment "${{ github.event.pull_request.number }}" --body "✅ Tests passed successfully! The AI-assisted fixes have resolved the issues."
+                fi
+
             - name: Create AI Fix Branch
               id: create_branch
               if: |
@@ -148,7 +158,8 @@ jobs:
             - name: Create Pull Request
               if: |
                 needs.check-branch-status.outputs.is_aifix == 'false' || 
-                needs.check-branch-status.outputs.should_create_pr == 'true'
+                (needs.check-branch-status.outputs.is_aifix == 'true' && 
+                needs.check-branch-status.outputs.should_create_pr == 'true')
               run: |
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 gh pr create \
