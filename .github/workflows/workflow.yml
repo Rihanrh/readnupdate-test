@@ -103,9 +103,8 @@ jobs:
               run: |
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 if [[ "${{ steps.pytest_status.outputs.pytest_failed }}" == "true" ]]; then
-                  gh pr comment "${{ github.event.pull_request.number }}" --body "⚠️ Tests failed. To prevent infinite PR creation loop, no further PR will be created. 
-                  Please review the changes manually or give us feedback.
-                  \nYou can give feedback to the AI model by commenting with a '[FEEDBACK]' tag within the comment."
+                  gh pr comment "${{ github.event.pull_request.number }}" --body "⚠️ Tests failed for this AI fix ⚠️
+                  You can provide feedback for another attempt by commenting with '[FEEDBACK] your feedback here'."
                 else
                   gh pr comment "${{ github.event.pull_request.number }}" --body "✅ Tests passed successfully! The AI-assisted fixes have resolved the issues."
                 fi
@@ -193,7 +192,8 @@ jobs:
                   --base main \
                   --head ${{ steps.read_branch.outputs.target_branch }} \
                   --title "[AIFIX] fix for PR #${{ github.event.pull_request.number }}" \
-                  --body "This is an AI-generated fix for the failed tests in PR #${{ github.event.pull_request.number }}. Please review the changes carefully."
+                  --body "This is an AI-generated fix for the failed tests in PR #${{ github.event.pull_request.number }}."
+                  --label "AIFIX"
 
             - name: Close Original Pull Request
               if: needs.check-branch-status.outputs.is_aifix == 'false'
