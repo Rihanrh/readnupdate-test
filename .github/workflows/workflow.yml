@@ -161,7 +161,7 @@ jobs:
                 (needs.check-branch-status.outputs.is_aifix == 'true' && 
                 needs.check-branch-status.outputs.should_create_pr == 'true')
               run: |
-                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+                gh auth login --with-token <<< "${{ secrets.PAT_TOKEN }}"
                 gh pr create \
                   --base main \
                   --head ${{ steps.read_branch.outputs.target_branch }} \
