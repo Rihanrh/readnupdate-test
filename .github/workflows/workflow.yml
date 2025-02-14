@@ -10,7 +10,37 @@ permissions:
     pull-requests: write
 
 jobs:
+    check-branch-status:
+        runs-on: ubuntu-latest
+        outputs:
+            is_aifix: ${{ steps.check_branch.outputs.is_aifix }}
+            should_create_pr: ${{ steps.check_pr.outputs.should_create_pr }}
+        steps:
+            - name: Check if branch is AI-generated
+              id: check_branch
+              run: |
+                if [[ "${{ github.head_ref }}" == *"-AIFIX-"* ]]; then
+                  echo "is_aifix=true" >> $GITHUB_OUTPUT
+                else
+                  echo "is_aifix=false" >> $GITHUB_OUTPUT
+                fi
+            - name: Check Pull Request Status
+              id: check_pr
+              if: steps.check_branch.outputs.is_aifix == 'true'
+              run: |
+                # Get PR title
+                pr_title="${{ github.event.pull_request.title }}"
+                # Check if this is an automated PR creation
+                if [[ "$pr_title" == "[AIFIX]"* ]]; then
+                  echo "should_create_pr=false" >> $GITHUB_OUTPUT
+                  echo "This is an automated Pull Request. Preventing infinite loop."
+                else
+                  echo "should_create_pr=true" >> $GITHUB_OUTPUT
+                  echo "Human changes detected, will create PR if needed"
+                fi
+
     run-tests:
+        needs: check-branch-status
         runs-on: ubuntu-latest
         outputs:
             pytest_failed: ${{ steps.pytest_status.outputs.pytest_failed }}
@@ -48,7 +78,9 @@ jobs:
 
             - name: Create AI Fix Branch
               id: create_branch
-              if: ${{ steps.pytest_status.outputs.pytest_failed == 'true' }}
+              if: |
+                steps.pytest_status.outputs.pytest_failed == 'true' && 
+                needs.check-branch-status.outputs.is_aifix == 'false'
               run: |
                 original_branch="${{ github.head_ref }}"
                 branch_name="${original_branch}-AIFIX-${{ github.event.pull_request.number }}"
@@ -56,9 +88,9 @@ jobs:
                 git push -u origin $branch_name
                 echo "$branch_name" > ai_fix_branch.txt
                 echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
-                cat $GITHUB_OUTPUT
 
             - name : Upload branch name artifact
+              if: steps.create_branch.outcome == 'success'
               uses: actions/upload-artifact@v4
               with:
                 name: ai-fix-branch
@@ -71,14 +103,21 @@ jobs:
                 path: src/pytest_report/report.json
 
     update-implementation:
-        needs: run-tests
-        if: ${{ needs.run-tests.outputs.pytest_failed == 'true' }}
+        needs: [check-branch-status, run-tests]
+        if: needs.run-tests.outputs.pytest_failed == 'true'
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
 
+            - name: Setup for existing AI branch
+              if: needs.check-branch-status.outputs.is_aifix == 'true'
+              run: |
+                current_branch="${{ github.head_ref }}"
+                echo "$current_branch" > ai_fix_branch.txt
+
             - name: Download ai-fix-branch artifact
+              if: needs.check-branch-status.outputs.is_aifix == 'false'
               uses: actions/download-artifact@v4
               with:
                 name: ai-fix-branch
@@ -104,9 +143,22 @@ jobs:
               with:
                 target-branch: ${{ steps.read_branch.outputs.target_branch }}
                 github-token: ${{ secrets.GITHUB_TOKEN }}
-                commit-message: "AI-assisted fix for failed tests"
+                commit-message: "[AIFIX] fix for failed tests"
+            
+            - name: Create Pull Request
+              if: |
+                needs.check-branch-status.outputs.is_aifix == 'false' || 
+                needs.check-branch-status.outputs.should_create_pr == 'true'
+              run: |
+                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+                gh pr create \
+                  --base main \
+                  --head ${{ steps.read_branch.outputs.target_branch }} \
+                  --title "[AIFIX] fix for PR #${{ github.event.pull_request.number }}" \
+                  --body "This is an AI-generated fix for the failed tests in PR #${{ github.event.pull_request.number }}. Please review the changes carefully."
 
             - name: Close Original Pull Request
+              if: needs.check-branch-status.outputs.is_aifix == 'false'
               run: |
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 gh pr close ${{ github.event.pull_request.number }} --comment "Closing this PR as an AI-assisted fix has been created in branch ${{ steps.read_branch.outputs.target_branch }}. Please review the new changes there."
