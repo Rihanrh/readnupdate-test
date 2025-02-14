@@ -17,8 +17,7 @@ jobs:
         if: |
             github.event_name == 'pull_request' || 
             (github.event_name == 'issue_comment' && 
-            github.event.issue.pull_request && 
-            contains(github.event.issue.labels.*.name, 'AIFIX'))
+            github.event.issue.pull_request)
         runs-on: ubuntu-latest
         outputs:
             is_aifix: ${{ steps.check_branch.outputs.is_aifix }}
@@ -193,7 +192,6 @@ jobs:
                   --head ${{ steps.read_branch.outputs.target_branch }} \
                   --title "[AIFIX] fix for PR #${{ github.event.pull_request.number }}" \
                   --body "This is an AI-generated fix for the failed tests in PR #${{ github.event.pull_request.number }}."
-                  --label "AIFIX"
 
             - name: Close Original Pull Request
               if: needs.check-branch-status.outputs.is_aifix == 'false'
