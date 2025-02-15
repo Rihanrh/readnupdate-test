@@ -1,0 +1,71 @@
+name: Process Feedback
+
+on:
+    issue_comment:
+        types: [created]
+
+permissions:
+    contents: write
+    pull-requests: write
+
+jobs:
+    process-feedback:
+        if: |
+            github.event.issue.pull_request && 
+            contains(github.event.comment.body, '[FEEDBACK]')
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+
+            - name: Get PR branch
+              id: get_pr_branch
+              run: |
+                # Get PR branch name
+                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+                pr_data=$(gh pr view ${{ github.event.issue.number }} --json headRefName,title)
+                branch_name=$(echo $pr_data | jq -r .headRefName)
+                
+                # Verify this is an AIFIX branch
+                if [[ "$branch_name" != *"-AIFIX-"* ]]; then
+                  echo "Error: Feedback only works on AIFIX branches"
+                  exit 1
+                fi
+                
+                echo "branch=$branch_name" >> $GITHUB_OUTPUT
+                
+                # Checkout the PR branch
+                git fetch origin $branch_name
+                git checkout $branch_name
+
+            - name: Run update implementation
+              uses: ./ # Uses the action in the root directory
+              env:
+                OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+                ASSISTANT_ID: ${{ secrets.ASSISTANT_ID }}
+              with:
+                target-branch: ${{ steps.get_pr_branch.outputs.branch }}
+                github-token: ${{ secrets.GITHUB_TOKEN }}
+                commit-message: "[AIFIX] Applying feedback from comment"
+                feedback: ${{ github.event.comment.body }}
+            
+            - name: Create or Update Pull Request
+              run: |
+                gh auth login --with-token <<< "${{ secrets.PAT_TOKEN }}"
+                
+                # Check if PR exists
+                existing_pr=$(gh pr list --head ${{ steps.get_pr_branch.outputs.branch }} --json number -q '.[0].number')
+                
+                if [ -n "$existing_pr" ]; then
+                  # Update existing PR
+                  gh pr comment $existing_pr --body "Applied feedback: ${{ github.event.comment.body }}"
+                else
+                  # Create new PR
+                  gh pr create \
+                    --base main \
+                    --head ${{ steps.get_pr_branch.outputs.branch }} \
+                    --title "[AIFIX] Applying feedback from PR #${{ github.event.issue.number }}" \
+                    --body "This is an AI-generated fix based on feedback in PR #${{ github.event.issue.number }}. Original feedback: ${{ github.event.comment.body }}"
+                fi
