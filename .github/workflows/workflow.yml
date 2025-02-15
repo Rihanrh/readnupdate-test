@@ -84,7 +84,7 @@ jobs:
                 if [[ "${{ steps.pytest_status.outputs.pytest_failed }}" == "true" ]]; then
                   gh pr comment "${{ github.event.pull_request.number }}" --body "⚠️ Tests failed for this AI fix ⚠️
                   Further automated PRs will not be created to prevent infinite loops.
-                  You can implement manual fixes, but please ensure this PR is closed."
+                  You can implement manual fixes, but please ensure this PR is closed.
                   You can also provide feedback for another attempt by commenting with '[FEEDBACK] your feedback here'."
                 else
                   gh pr comment "${{ github.event.pull_request.number }}" --body "✅ Tests passed successfully! The AI-assisted fixes have resolved the issues."
