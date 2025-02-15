@@ -119,8 +119,8 @@ jobs:
     update-implementation:
         needs: [check-branch-status, run-tests]
         if: |
-          needs.run-tests.outputs.pytest_failed == 'true' ||
-          (needs.check-branch-status.outputs.is_aifix == 'true' && needs.check-branch-status.outputs.should_create_pr == 'true')
+          (needs.run-tests.outputs.pytest_failed == 'true' && needs.check-branch-status.outputs.is_aifix == 'false') ||
+          (needs.run-tests.outputs.pytest_failed == 'true' && needs.check-branch-status.outputs.is_aifix == 'true' && needs.check-branch-status.outputs.should_create_pr == 'true')
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
