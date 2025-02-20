@@ -26,14 +26,20 @@ jobs:
                 issue-number: ${{ github.event.issue.number }}
                 body: "📝 Received feedback! Processing code changes..."
             
-            - name: Download pytest report from previous workflow
-              uses: dawidd6/action-download-artifact@v2
+            - name: Get PR details
+              id: pr_details
+              run: |
+                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+                pr_data=$(gh pr view ${{ github.event.issue.number }} --json headRefName,headRepository,headSha)
+                echo "sha=$(echo "$pr_data" | jq -r .headSha)" >> $GITHUB_OUTPUT
+
+            - name: Download pytest report
+              uses: actions/download-artifact@v4
               with:
-                github_token: ${{ secrets.GITHUB_TOKEN }}
-                workflow: workflow.yml
-                pr: ${{ github.event.issue.number }}
                 name: pytest-report
                 path: pytest_report
+                github-token: ${{ secrets.GITHUB_TOKEN }}
+                run-id: ${{ steps.pr_details.outputs.sha }}
 
             - name: Checkout repository
               uses: actions/checkout@v4

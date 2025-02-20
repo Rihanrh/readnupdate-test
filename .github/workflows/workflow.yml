@@ -115,6 +115,7 @@ jobs:
               with:
                 name: pytest-report
                 path: src/pytest_report/report.json
+                retention-days: 5
 
     update-implementation:
         needs: [check-branch-status, run-tests]
