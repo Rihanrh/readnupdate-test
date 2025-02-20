@@ -83,9 +83,10 @@ jobs:
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 if [[ "${{ steps.pytest_status.outputs.pytest_failed }}" == "true" ]]; then
                   gh pr comment "${{ github.event.pull_request.number }}" --body "⚠️ Tests failed for this AI fix ⚠️
-                  Further automated PRs will not be created to prevent infinite loops.
-                  You can implement manual fixes, but please ensure this PR is closed.
-                  You can also provide feedback for another attempt by commenting with '[FEEDBACK] your feedback here'."
+                  ❌ Further automated PRs will not be created to prevent infinite loops.
+                  🛠️ You can implement manual fixes, but please ensure this PR is closed.
+                  💬 You can also provide feedback for another attempt by commenting with '[FEEDBACK] your feedback here'.
+                    - *Note: After submitting feedback, please wait for the action to run. If nothing happens, double-check that '[FEEDBACK]' is spelled correctly.*"
                 else
                   gh pr comment "${{ github.event.pull_request.number }}" --body "✅ Tests passed successfully! The AI-assisted fixes have resolved the issues."
                 fi
