@@ -30,8 +30,8 @@ jobs:
               id: pr_details
               run: |
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
-                pr_data=$(gh pr view ${{ github.event.issue.number }} --json headRefName,headRepository,headSha)
-                echo "sha=$(echo "$pr_data" | jq -r .headSha)" >> $GITHUB_OUTPUT
+                pr_data=$(gh pr view ${{ github.event.issue.number }} --json headRefName,headRepository,headRefOid)
+                echo "sha=$(echo "$pr_data" | jq -r .headRefOid)" >> $GITHUB_OUTPUT
 
             - name: Download pytest report
               uses: actions/download-artifact@v4
