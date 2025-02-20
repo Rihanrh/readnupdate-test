@@ -54,7 +54,7 @@ jobs:
                 path: pytest_report
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 run-id: ${{ steps.pr_details.outputs.run_id }}
-                
+
             - name: Get PR branch
               id: get_pr_branch
               run: |
@@ -86,8 +86,9 @@ jobs:
                 commit-message: "[AIFIX] Applying feedback from comment"
                 feedback: ${{ github.event.comment.body }}
             
-            - name: Notify processing complete
-              uses: peter-evans/create-or-update-comment@v2
-              with:
-                issue-number: ${{ github.event.issue.number }}
-                body: "✅ Code has been processed with the provided feedback. New changes have been pushed to the branch."
+            - name: Notify Processing Completion and Test Retrigger  
+              uses: peter-evans/create-or-update-comment@v2  
+              with:  
+                issue-number: ${{ github.event.issue.number }}  
+                body: "✅ Code has been processed with the provided feedback. New changes have been pushed to the branch. The test workflow will start shortly."  
+
