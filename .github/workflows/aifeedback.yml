@@ -31,12 +31,21 @@ jobs:
               with:
                 fetch-depth: 0
             
-            - name: Get PR details
+            - name: Get PR details and workflow run
               id: pr_details
               run: |
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+                
+                # Get PR branch and other details
                 pr_data=$(gh pr view ${{ github.event.issue.number }} --json headRefName,headRepository,headRefOid)
-                echo "sha=$(echo "$pr_data" | jq -r .headRefOid)" >> $GITHUB_OUTPUT
+                branch_name=$(echo "$pr_data" | jq -r .headRefName)
+                
+                # Find the most recent successful run of the Update Failed Implementation workflow
+                workflow_runs=$(gh run list --workflow "Update Failed Implementation" --branch "$branch_name" --json conclusion,databaseId,status --jq '[.[] | select(.status=="completed")]')
+                run_id=$(echo "$workflow_runs" | jq -r '.[0].databaseId')
+                
+                echo "run_id=$run_id" >> $GITHUB_OUTPUT
+                echo "Found workflow run ID: $run_id"
 
             - name: Download pytest report
               uses: actions/download-artifact@v4
@@ -44,8 +53,8 @@ jobs:
                 name: pytest-report
                 path: pytest_report
                 github-token: ${{ secrets.GITHUB_TOKEN }}
-                run-id: ${{ steps.pr_details.outputs.sha }}
-
+                run-id: ${{ steps.pr_details.outputs.run_id }}
+                
             - name: Get PR branch
               id: get_pr_branch
               run: |
