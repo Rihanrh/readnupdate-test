@@ -26,6 +26,11 @@ jobs:
                 issue-number: ${{ github.event.issue.number }}
                 body: "📝 Received feedback! Processing code changes..."
             
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            
             - name: Get PR details
               id: pr_details
               run: |
@@ -40,11 +45,6 @@ jobs:
                 path: pytest_report
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 run-id: ${{ steps.pr_details.outputs.sha }}
-
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                fetch-depth: 0
 
             - name: Get PR branch
               id: get_pr_branch
