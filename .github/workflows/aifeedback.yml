@@ -14,6 +14,27 @@ jobs:
         if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '[FEEDBACK]') }}
         runs-on: ubuntu-latest
         steps:
+            - name: React to comment
+              uses: peter-evans/create-or-update-comment@v2
+              with:
+                comment-id: ${{ github.event.comment.id }}
+                reactions: '+1'
+
+            - name: Notify processing started
+              uses: peter-evans/create-or-update-comment@v2
+              with:
+                issue-number: ${{ github.event.issue.number }}
+                body: "📝 Received feedback! Processing code changes..."
+            
+            - name: Download pytest report from previous workflow
+              uses: dawidd6/action-download-artifact@v2
+              with:
+                github_token: ${{ secrets.GITHUB_TOKEN }}
+                workflow: workflow.yml
+                pr: ${{ github.event.issue.number }}
+                name: pytest-report
+                path: pytest_report
+
             - name: Checkout repository
               uses: actions/checkout@v4
               with:
@@ -22,20 +43,22 @@ jobs:
             - name: Get PR branch
               id: get_pr_branch
               run: |
-                # Get original PR branch name
+                # Get PR branch name
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 pr_data=$(gh pr view ${{ github.event.issue.number }} --json headRefName,title)
-                original_branch=$(echo $pr_data | jq -r .headRefName)
+                branch_name=$(echo $pr_data | jq -r .headRefName)
                 
-                # Create new branch with timestamp
-                timestamp=$(date +%s)
-                new_branch="${original_branch}-feedback-${timestamp}"
+                # Verify this is an AIFIX branch
+                if [[ "$branch_name" != *"-AIFIX-"* ]]; then
+                  echo "Error: Feedback only works on AIFIX branches"
+                  exit 1
+                fi
                 
-                # Create and checkout new branch
-                git checkout -b $new_branch
-                git push origin $new_branch
+                echo "branch=$branch_name" >> $GITHUB_OUTPUT
                 
-                echo "branch=$new_branch" >> $GITHUB_OUTPUT
+                # Checkout the PR branch
+                git fetch origin $branch_name
+                git checkout $branch_name
 
             - name: Run update implementation
               uses: ./ # Uses the action in the root directory
@@ -48,17 +71,8 @@ jobs:
                 commit-message: "[AIFIX] Applying feedback from comment"
                 feedback: ${{ github.event.comment.body }}
             
-            - name: Create New Pull Request
-              run: |
-                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
-                
-                # Create new PR
-                gh pr create \
-                  --base main \
-                  --head ${{ steps.get_pr_branch.outputs.branch }} \
-                  --title "[AIFIX] Feedback implementation for PR #${{ github.event.issue.number }}" \
-                  --body "This is an AI-generated fix based on feedback in PR #${{ github.event.issue.number }}. Original feedback: ${{ github.event.comment.body }}"
-
-            - name: Close Original PR
-              run: |
-                gh pr close ${{ github.event.issue.number }} --comment "Creating new PR with feedback implementation. Please check the new PR."
+            - name: Notify processing complete
+              uses: peter-evans/create-or-update-comment@v2
+              with:
+                issue-number: ${{ github.event.issue.number }}
+                body: "✅ Code has been processed with the provided feedback. New changes have been pushed to the branch."
