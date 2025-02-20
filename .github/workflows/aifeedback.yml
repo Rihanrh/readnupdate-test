@@ -3,9 +3,12 @@ name: Process Feedback
 on:
     issue_comment:
         types: [created]
+    pull_request:
+        types: [opened]
 
 permissions:
     contents: write
+    actions: write
     pull-requests: write
 
 jobs:
