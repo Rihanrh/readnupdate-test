@@ -3,8 +3,6 @@ name: Process Feedback
 on:
     issue_comment:
         types: [created]
-    pull_request:
-        types: [opened]
 
 permissions:
     contents: write
@@ -21,33 +19,23 @@ jobs:
               with:
                 fetch-depth: 0
 
-            - name: Get PR information
-              id: get_pr_info
-              uses: octokit/request-action@v2.x
-              with:
-                route: ${{ github.event.issue.pull_request.url }}
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
             - name: Get PR branch
               id: get_pr_branch
               run: |
-                # Get PR branch name
+                # Get original PR branch name
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 pr_data=$(gh pr view ${{ github.event.issue.number }} --json headRefName,title)
-                branch_name=$(echo $pr_data | jq -r .headRefName)
+                original_branch=$(echo $pr_data | jq -r .headRefName)
                 
-                # Verify this is an AIFIX branch
-                if [[ "$branch_name" != *"-AIFIX-"* ]]; then
-                  echo "Error: Feedback only works on AIFIX branches"
-                  exit 1
-                fi
+                # Create new branch with timestamp
+                timestamp=$(date +%s)
+                new_branch="${original_branch}-feedback-${timestamp}"
                 
-                echo "branch=$branch_name" >> $GITHUB_OUTPUT
+                # Create and checkout new branch
+                git checkout -b $new_branch
+                git push origin $new_branch
                 
-                # Checkout the PR branch
-                git fetch origin $branch_name
-                git checkout $branch_name
+                echo "branch=$new_branch" >> $GITHUB_OUTPUT
 
             - name: Run update implementation
               uses: ./ # Uses the action in the root directory
@@ -60,21 +48,17 @@ jobs:
                 commit-message: "[AIFIX] Applying feedback from comment"
                 feedback: ${{ github.event.comment.body }}
             
-            - name: Create or Update Pull Request
+            - name: Create New Pull Request
               run: |
-                gh auth login --with-token <<< "${{ secrets.PAT_TOKEN }}"
+                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 
-                # Check if PR exists
-                existing_pr=$(gh pr list --head ${{ steps.get_pr_branch.outputs.branch }} --json number -q '.[0].number')
-                
-                if [ -n "$existing_pr" ]; then
-                  # Update existing PR
-                  gh pr comment $existing_pr --body "Applied feedback: ${{ github.event.comment.body }}"
-                else
-                  # Create new PR
-                  gh pr create \
-                    --base main \
-                    --head ${{ steps.get_pr_branch.outputs.branch }} \
-                    --title "[AIFIX] Applying feedback from PR #${{ github.event.issue.number }}" \
-                    --body "This is an AI-generated fix based on feedback in PR #${{ github.event.issue.number }}. Original feedback: ${{ github.event.comment.body }}"
-                fi
+                # Create new PR
+                gh pr create \
+                  --base main \
+                  --head ${{ steps.get_pr_branch.outputs.branch }} \
+                  --title "[AIFIX] Feedback implementation for PR #${{ github.event.issue.number }}" \
+                  --body "This is an AI-generated fix based on feedback in PR #${{ github.event.issue.number }}. Original feedback: ${{ github.event.comment.body }}"
+
+            - name: Close Original PR
+              run: |
+                gh pr close ${{ github.event.issue.number }} --comment "Creating new PR with feedback implementation. Please check the new PR."
