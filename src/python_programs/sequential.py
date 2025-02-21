@@ -1,3 +1,5 @@
+
+# Useless change added to facilitate debug mode
 def search(x, seq):
     for i in range(len(seq)):
         if x <= seq[i]:
