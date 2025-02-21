@@ -55,25 +55,31 @@ jobs:
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 run-id: ${{ steps.pr_details.outputs.run_id }}
 
-            - name: Get PR branch
+            - name: Get PR branch and create new branch
               id: get_pr_branch
               run: |
                 # Get PR branch name
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
                 pr_data=$(gh pr view ${{ github.event.issue.number }} --json headRefName,title)
-                branch_name=$(echo $pr_data | jq -r .headRefName)
+                current_branch=$(echo $pr_data | jq -r .headRefName)
                 
                 # Verify this is an AIFIX branch
-                if [[ "$branch_name" != *"-AIFIX-"* ]]; then
+                if [[ "$current_branch" != *"-AIFIX-"* ]]; then
                   echo "Error: Feedback only works on AIFIX branches"
                   exit 1
                 fi
                 
-                echo "branch=$branch_name" >> $GITHUB_OUTPUT
+                # Create new branch with feedback suffix
+                new_branch="${current_branch}-feedback"
                 
-                # Checkout the PR branch
-                git fetch origin $branch_name
-                git checkout $branch_name
+                # Checkout and create the new branch
+                git fetch origin $current_branch
+                git checkout $current_branch
+                git checkout -b $new_branch
+                git push -u origin $new_branch
+                
+                echo "current_branch=$current_branch" >> $GITHUB_OUTPUT
+                echo "new_branch=$new_branch" >> $GITHUB_OUTPUT
 
             - name: Run update implementation
               uses: ./ # Uses the action in the root directory
@@ -81,14 +87,22 @@ jobs:
                 OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
                 ASSISTANT_ID: ${{ secrets.ASSISTANT_ID }}
               with:
-                target-branch: ${{ steps.get_pr_branch.outputs.branch }}
+                target-branch: ${{ steps.get_pr_branch.outputs.new_branch }}
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 commit-message: "[AIFIX] Applying feedback from comment"
                 feedback: ${{ github.event.comment.body }}
             
-            - name: Notify Processing Completion and Test Retrigger  
-              uses: peter-evans/create-or-update-comment@v2  
-              with:  
-                issue-number: ${{ github.event.issue.number }}  
-                body: "✅ Code has been processed with the provided feedback. New changes have been pushed to the branch. The test workflow will start shortly."  
+            - name: Create New Pull Request
+              run: |
+                gh auth login --with-token <<< "${{ secrets.PAT_TOKEN }}"
+                gh pr create \
+                  --base main \
+                  --head ${{ steps.get_pr_branch.outputs.new_branch }} \
+                  --title "[AIFIX] Updated fix with feedback for PR #${{ github.event.issue.number }}" \
+                  --body "This is an updated AI-generated fix incorporating feedback from PR #${{ github.event.issue.number }}."
+
+            - name: Close Original Pull Request
+              run: |
+                gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+                gh pr close ${{ github.event.issue.number }} --comment "Closing this PR as a new AI-assisted fix with feedback has been created in branch ${{ steps.get_pr_branch.outputs.new_branch }}. Please review the new changes there."
 
