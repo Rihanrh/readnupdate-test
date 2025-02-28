@@ -1,7 +1,7 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 const { fullAssistantProcessor } = require("./utils/fullAssistantProcessor");
-const { config } = require("./utils/config");
+const { getConfig } = require("./utils/config");
 
 async function run() {
     try {
@@ -10,6 +10,9 @@ async function run() {
         const targetBranch = core.getInput("target-branch", { required: true });
         const feedback = core.getInput("feedback") || "Run instructions";
         const reportPath = core.getInput('report-path');
+
+        console.log(`Using report path: ${reportPath}`);
+        const config = getConfig(reportPath);
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");

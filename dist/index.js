@@ -35627,6 +35627,17 @@ function wrappy (fn, cb) {
 const { getFailedTestNodeIds } = __nccwpck_require__(7239);
 
 function getConfig(reportPath) {
+    // If no report path is provided, return a basic config without trying to process a file
+    if (!reportPath) {
+        console.warn('No report path provided to getConfig');
+        return {
+            assistantID: process.env.ASSISTANT_ID,
+            openaiApiKey: process.env.OPENAI_API_KEY,
+            filesToUpload: [],
+            implementationFile: ''
+        };
+    }
+    
     const failedTestInfo = getFailedTestNodeIds(reportPath);
     
     return {
@@ -35637,8 +35648,14 @@ function getConfig(reportPath) {
     };
 }
 
-// Default config for backward compatibility
-const config = getConfig();
+// Export a placeholder config that doesn't require file reading
+// This avoids the undefined path error during module initialization
+const config = {
+    get assistantID() { return process.env.ASSISTANT_ID; },
+    get openaiApiKey() { return process.env.OPENAI_API_KEY; },
+    filesToUpload: [],
+    implementationFile: ''
+};
 
 module.exports = { config, getConfig };
 
@@ -35712,9 +35729,16 @@ function processNodeId(nodeId) {
 
 function getFailedTestNodeIds(reportPath) {
     try {
+        // Check if reportPath is defined
+        if (!reportPath) {
+            console.error('No report path provided to getFailedTestNodeIds');
+            return { filesToUpload: [], implementationFile: '' };
+        }
+
         const jsonData = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
         
         if (!jsonData.tests || !Array.isArray(jsonData.tests)) {
+            console.error('Invalid or missing tests array in report');
             return { filesToUpload: [], implementationFile: '' };
         }
 
@@ -46178,7 +46202,7 @@ var __webpack_exports__ = {};
 const core = __nccwpck_require__(7484);
 const github = __nccwpck_require__(3228);
 const { fullAssistantProcessor } = __nccwpck_require__(2162);
-const { config } = __nccwpck_require__(4617);
+const { getConfig } = __nccwpck_require__(4617);
 
 async function run() {
     try {
@@ -46187,6 +46211,9 @@ async function run() {
         const targetBranch = core.getInput("target-branch", { required: true });
         const feedback = core.getInput("feedback") || "Run instructions";
         const reportPath = core.getInput('report-path');
+
+        console.log(`Using report path: ${reportPath}`);
+        const config = getConfig(reportPath);
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");

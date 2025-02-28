@@ -22,9 +22,16 @@ function processNodeId(nodeId) {
 
 function getFailedTestNodeIds(reportPath) {
     try {
+        // Check if reportPath is defined
+        if (!reportPath) {
+            console.error('No report path provided to getFailedTestNodeIds');
+            return { filesToUpload: [], implementationFile: '' };
+        }
+
         const jsonData = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
         
         if (!jsonData.tests || !Array.isArray(jsonData.tests)) {
+            console.error('Invalid or missing tests array in report');
             return { filesToUpload: [], implementationFile: '' };
         }
 
