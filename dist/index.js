@@ -35667,16 +35667,17 @@ module.exports = { config, getConfig };
 const { openai } = __nccwpck_require__(4158);
 
 /**
- * Explanation about the functions
- * 
- * @param {Array<string>} fieldIds Field ids of the blablabla
- * @returns {Promise<Thread>}
- * 
+ * Creates a new OpenAI thread with an initial user message.
+ *
+ * @param {Array<string>} fileIds - The IDs of files to attach to the message.
+ * @param {string} feedback - The content of the user's message.
+ * @returns {Promise<Thread>} - A promise resolving to the created thread.
+ *
  * @example
- * const fieldIds = ['foo', 'bar']
- * const thread = await createThread(fieldIds)
- * console.log(thread)
- * 
+ * const fileIds = ['file-123', 'file-456'];
+ * const feedback = "Please analyze these files.";
+ * const thread = await createThread(fileIds, feedback);
+ * console.log(thread);
  */
 async function createThread(fileIds, feedback) {
     const attachments = fileIds.map((fileId) => ({
@@ -35857,18 +35858,9 @@ const fs = __nccwpck_require__(9896);
  */
 
 async function retrieveContent(filePath) {
-    // FIX LATER: How to define relative path with os/path lib
-    // const path = 'src/sample_files/corrected_code.py';
-
     const file = await openai.files.content(filePath);
     const newData = await file.text();
     return newData;
-    
-    // fs.writeFileSync(
-    //     path, 
-    //     newData,
-    //     { encoding: "utf8" }
-    // );
 }
 
 module.exports = { retrieveContent };

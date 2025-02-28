@@ -1,16 +1,17 @@
 const { openai } = require("./openaiClient");
 
 /**
- * Explanation about the functions
- * 
- * @param {Array<string>} fieldIds Field ids of the blablabla
- * @returns {Promise<Thread>}
- * 
+ * Creates a new OpenAI thread with an initial user message.
+ *
+ * @param {Array<string>} fileIds - The IDs of files to attach to the message.
+ * @param {string} feedback - The content of the user's message.
+ * @returns {Promise<Thread>} - A promise resolving to the created thread.
+ *
  * @example
- * const fieldIds = ['foo', 'bar']
- * const thread = await createThread(fieldIds)
- * console.log(thread)
- * 
+ * const fileIds = ['file-123', 'file-456'];
+ * const feedback = "Please analyze these files.";
+ * const thread = await createThread(fileIds, feedback);
+ * console.log(thread);
  */
 async function createThread(fileIds, feedback) {
     const attachments = fileIds.map((fileId) => ({
