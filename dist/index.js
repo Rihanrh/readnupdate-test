@@ -35754,7 +35754,7 @@ const { uploadFiles } = __nccwpck_require__(4163);
 const { createThread } = __nccwpck_require__(8531);
 const { runAssistant } = __nccwpck_require__(556);
 const { giveResults } = __nccwpck_require__(570);
-const { config } = __nccwpck_require__(4617);
+const { getConfig } = __nccwpck_require__(4617);
 const { retrieveContent } = __nccwpck_require__(3066);
 
 async function fullAssistantProcessor(feedback, reportPath) {
