@@ -1,4 +1,4 @@
-const { getFailedTestNodeIds } = require("./failedCodeProcessor");
+const { getRelevantFiles } = require("./failedCodeProcessor");
 
 function getConfig(reportPath) {
     // If no report path is provided, return a basic config without trying to process a file
@@ -12,7 +12,7 @@ function getConfig(reportPath) {
         };
     }
     
-    const failedTestInfo = getFailedTestNodeIds(reportPath);
+    const failedTestInfo = getRelevantFiles(reportPath);
     
     return {
         assistantID: process.env.ASSISTANT_ID,
