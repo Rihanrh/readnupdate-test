@@ -35712,7 +35712,7 @@ function processNodeId(nodeId) {
 
 function getFailedTestNodeIds(customReportPath) {
     try {
-        const reportPath = customReportPath || path.join(__dirname, '..', 'pytest_report', 'report.json');
+        const reportPath = customReportPath;
         const jsonData = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
         
         if (!jsonData.tests || !Array.isArray(jsonData.tests)) {
