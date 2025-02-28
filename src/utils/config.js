@@ -1,7 +1,4 @@
-const dotenv = require("dotenv");
 const { getFailedTestNodeIds } = require("./failedCodeProcessor");
-
-dotenv.config();
 
 const failedTestInfo = getFailedTestNodeIds();
 
