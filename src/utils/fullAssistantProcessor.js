@@ -2,7 +2,7 @@ const { uploadFiles } = require("./uploadFiles");
 const { createThread } = require("./createThread");
 const { runAssistant } = require("./runAssistant");
 const { giveResults } = require("./giveResults");
-const { config } = require("./config");
+const { getConfig } = require("./config");
 const { retrieveContent } = require("./retrieveContent");
 
 async function fullAssistantProcessor(feedback, reportPath) {
