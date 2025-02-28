@@ -35710,9 +35710,8 @@ function processNodeId(nodeId) {
     };
 }
 
-function getFailedTestNodeIds(customReportPath) {
+function getFailedTestNodeIds(reportPath) {
     try {
-        const reportPath = customReportPath;
         const jsonData = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
         
         if (!jsonData.tests || !Array.isArray(jsonData.tests)) {
