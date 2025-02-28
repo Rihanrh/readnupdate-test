@@ -35773,7 +35773,7 @@ function getRelevantFiles(reportPath) {
 
 module.exports = {
     getRelevantFiles,
-    processNodeId
+    processTestReport
 };
 
 /* Uncomment this block to test the function
