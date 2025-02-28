@@ -162,6 +162,7 @@ jobs:
                 target-branch: ${{ steps.read_branch.outputs.target_branch }}
                 github-token: ${{ secrets.GITHUB_TOKEN }}
                 commit-message: "[AIFIX] fix for failed tests"
+                report-path: "pytest_report/report.json"
             
             - name: Create Pull Request
               if: needs.check-branch-status.outputs.is_aifix == 'false'

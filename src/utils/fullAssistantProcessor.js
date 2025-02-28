@@ -5,8 +5,9 @@ const { giveResults } = require("./giveResults");
 const { config } = require("./config");
 const { retrieveContent } = require("./retrieveContent");
 
-async function fullAssistantProcessor(feedback) {
+async function fullAssistantProcessor(feedback, reportPath) {
     try {
+        const config = getConfig(reportPath);
         if (!config.filesToUpload.length) {
             console.log("No failed test files found to process");
             return null;

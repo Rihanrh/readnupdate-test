@@ -9,13 +9,14 @@ async function run() {
         const commitMessage = core.getInput("commit-message", { required: true });
         const targetBranch = core.getInput("target-branch", { required: true });
         const feedback = core.getInput("feedback") || "Run instructions";
+        const reportPath = core.getInput('report-path');
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
         }
 
         // Process with the assistant
-        const newData = await fullAssistantProcessor(feedback);
+        const newData = await fullAssistantProcessor(feedback, reportPath);
 
         if (!newData) {
             throw new Error(

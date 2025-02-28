@@ -35626,16 +35626,21 @@ function wrappy (fn, cb) {
 
 const { getFailedTestNodeIds } = __nccwpck_require__(7239);
 
-const failedTestInfo = getFailedTestNodeIds();
+function getConfig(reportPath) {
+    const failedTestInfo = getFailedTestNodeIds(reportPath);
+    
+    return {
+        assistantID: process.env.ASSISTANT_ID,
+        openaiApiKey: process.env.OPENAI_API_KEY,
+        filesToUpload: failedTestInfo.filesToUpload,
+        implementationFile: failedTestInfo.implementationFile
+    };
+}
 
-const config = {
-    assistantID: process.env.ASSISTANT_ID,
-    openaiApiKey: process.env.OPENAI_API_KEY,
-    filesToUpload: failedTestInfo.filesToUpload,
-    implementationFile: failedTestInfo.implementationFile
-};
+// Default config for backward compatibility
+const config = getConfig();
 
-module.exports = { config };
+module.exports = { config, getConfig };
 
 /***/ }),
 
@@ -35705,9 +35710,9 @@ function processNodeId(nodeId) {
     };
 }
 
-function getFailedTestNodeIds() {
+function getFailedTestNodeIds(customReportPath) {
     try {
-        const reportPath = path.join(__dirname, '..', 'pytest_report', 'report.json');
+        const reportPath = customReportPath || path.join(__dirname, '..', 'pytest_report', 'report.json');
         const jsonData = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
         
         if (!jsonData.tests || !Array.isArray(jsonData.tests)) {
@@ -35752,8 +35757,9 @@ const { giveResults } = __nccwpck_require__(570);
 const { config } = __nccwpck_require__(4617);
 const { retrieveContent } = __nccwpck_require__(3066);
 
-async function fullAssistantProcessor(feedback) {
+async function fullAssistantProcessor(feedback, reportPath) {
     try {
+        const config = getConfig(reportPath);
         if (!config.filesToUpload.length) {
             console.log("No failed test files found to process");
             return null;
@@ -46181,13 +46187,14 @@ async function run() {
         const commitMessage = core.getInput("commit-message", { required: true });
         const targetBranch = core.getInput("target-branch", { required: true });
         const feedback = core.getInput("feedback") || "Run instructions";
+        const reportPath = core.getInput('report-path');
 
         if (!config.implementationFile) {
             throw new Error("No failed test implementation file found to update");
         }
 
         // Process with the assistant
-        const newData = await fullAssistantProcessor(feedback);
+        const newData = await fullAssistantProcessor(feedback, reportPath);
 
         if (!newData) {
             throw new Error(
