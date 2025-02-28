@@ -35707,7 +35707,6 @@ module.exports = { createThread };
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const fs = __nccwpck_require__(9896);
-const path = __nccwpck_require__(6928);
 
 function processNodeId(nodeId) {
     if (!nodeId) return [];
