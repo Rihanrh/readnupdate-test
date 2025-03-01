@@ -35724,28 +35724,33 @@ function processTestReport(jsonData) {
     // Get test file from nodeid
     const testFile = failedTest.nodeid.split('::')[0];
     
-    // Get implementation file directly from crash path if available
+    // Get implementation file by comparing crash path with traceback paths
     let implementationFile = '';
-    if (failedTest.call && failedTest.call.crash && failedTest.call.crash.path) {
-        implementationFile = failedTest.call.crash.path
-            .replace(/\\/g, '/') // Convert Windows backslashes to forward slashes
-            .replace(/^.*?([A-Za-z]:\/|\/)(.*?)$/, '$2'); // Remove machine-specific path prefix
-    } else if (failedTest.call && failedTest.call.traceback && failedTest.call.traceback.length > 0) {
-        // Backup: look for implementation file in traceback
-        const sourceFrame = failedTest.call.traceback.find(frame => 
-            !frame.path.includes('test_') && !frame.path.includes('python_testcases'));
-            
-        if (sourceFrame) {
-            implementationFile = sourceFrame.path.replace(/\\/g, '/');
-        }
-    }
     
-    // If still couldn't find implementation file, fall back to original method
-    if (!implementationFile) {
-        implementationFile = testFile
-            .replace('/python_testcases/', '/python_programs/')
-            .replace('test_', '');
-        console.warn('Using fallback method to determine implementation file:', implementationFile);
+    if (failedTest.call && failedTest.call.crash && failedTest.call.crash.path) {
+        const crashPath = failedTest.call.crash.path.replace(/\\/g, '/');
+        
+        if (failedTest.call.traceback && Array.isArray(failedTest.call.traceback)) {
+            // Extract the filename portion from the crash path
+            const crashPathParts = crashPath.split('/');
+            const crashFileName = crashPathParts[crashPathParts.length - 1];
+            
+            // Look for matching filename in traceback paths
+            for (const frame of failedTest.call.traceback) {
+                if (!frame.path) continue;
+                
+                const tracebackPath = frame.path.replace(/\\/g, '/');
+                
+                // Check if this traceback path is for an implementation file (not a test file)
+                if (!tracebackPath.includes('test_') && !tracebackPath.includes('python_testcases')) {
+                    // Check if the traceback path ends with the same filename as the crash path
+                    if (tracebackPath.endsWith(crashFileName)) {
+                        implementationFile = tracebackPath;
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     return {
