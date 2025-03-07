@@ -16,10 +16,10 @@ function processTestReport(jsonData) {
     // Get test file from nodeid
     const testFile = failedTest.nodeid.split('::')[0];
     
-    // Get implementation file by comparing crash path with traceback paths
+    // Implementation file logic
+    // Find implementation file by checking which traceback path is contained in the crash path
     let implementationFile = '';
     
-    // Find implementation file by checking which traceback path is contained in the crash path
     if (failedTest.call && 
         failedTest.call.crash && 
         failedTest.call.crash.path && 
