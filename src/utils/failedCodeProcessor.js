@@ -19,36 +19,31 @@ function processTestReport(jsonData) {
     // Get implementation file by comparing crash path with traceback paths
     let implementationFile = '';
     
-    if (failedTest.call && failedTest.call.crash && failedTest.call.crash.path) {
-        const crashPath = failedTest.call.crash.path.replace(/\\/g, '/');
+    // Find implementation file by checking which traceback path is contained in the crash path
+    if (failedTest.call && 
+        failedTest.call.crash && 
+        failedTest.call.crash.path && 
+        failedTest.call.traceback && 
+        Array.isArray(failedTest.call.traceback)) {
         
-        if (failedTest.call.traceback && Array.isArray(failedTest.call.traceback)) {
-            // Extract the filename portion from the crash path
-            const crashPathParts = crashPath.split('/');
-            const crashFileName = crashPathParts[crashPathParts.length - 1];
-            
-            // Look for matching filename in traceback paths
-            for (const frame of failedTest.call.traceback) {
-                if (!frame.path) continue;
-                
-                const tracebackPath = frame.path.replace(/\\/g, '/');
-                
-                // Check if this traceback path is for an implementation file (not a test file)
-                if (!tracebackPath.includes('test_') && !tracebackPath.includes('python_testcases')) {
-                    // Check if the traceback path ends with the same filename as the crash path
-                    if (tracebackPath.endsWith(crashFileName)) {
-                        implementationFile = tracebackPath;
-                        break;
-                    }
-                }
-            }
+        const crashPath = failedTest.call.crash.path.replace(/\\/g, '\\\\'); // Escape backslashes
+        
+        // Find the traceback entry that matches the implementation file
+        const implementationTraceback = failedTest.call.traceback.find(trace => {
+            // Convert Windows paths to a consistent format for comparison
+            const normalizedTracePath = trace.path.replace(/\\/g, '\\\\');
+            return crashPath.includes(normalizedTracePath);
+        });
+        
+        if (implementationTraceback) {
+            implementationFile = implementationTraceback.path;
         }
     }
 
     return {
         testFile,
         implementationFile,
-        filesToUpload: [testFile, implementationFile]
+        filesToUpload: [testFile, implementationFile].filter(Boolean) // Filter out empty strings
     };
 }
 
@@ -72,16 +67,3 @@ module.exports = {
     getRelevantFiles,
     processTestReport
 };
-
-/* Uncomment this block to test the function
-if (require.main === module) {
-    const paths = getFailedTestNodeIds();
-    if (paths.length) {
-        console.log('Test file:', paths[0]);
-        console.log('Implementation file:', paths[1]);
-        console.log('JSON test cases:', paths[2]);
-    } else {
-        console.log('No failed tests found or error occurred');
-    }
-}
-*/
