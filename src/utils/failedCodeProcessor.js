@@ -6,14 +6,15 @@ function processTestReport(jsonData) {
         return { filesToUpload: [], implementationFile: '', testFile: '' };
     }
 
-    const failedTest = jsonData.tests.find(test => test.outcome === "failed");
+    const failedTests = jsonData.tests.filter(test => test.outcome === "failed");
     
-    if (!failedTest) {
+    if (failedTests.length === 0) {
         console.error('No failed tests found in report');
         return { filesToUpload: [], implementationFile: '', testFile: '' };
     }
 
     // Get test file from nodeid
+    const failedTest = failedTests[0]; // Only process the first failed test
     const testFile = failedTest.nodeid.split('::')[0];
     
     // Implementation file logic
